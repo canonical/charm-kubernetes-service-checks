@@ -1,0 +1,26 @@
+name: kubernetes-service-checks
+summary: Kubernetes Services NRPE Checks
+maintainers:
+    - Llama (LMA) Charmers <llama-charmers@lists.ubuntu.com>
+description: |
+    This charm provides NRPE Checks verifying Kubernetes API accessibility
+    and integrates with Nagios for timely alerting.
+tags:
+    - kubernetes
+    - ops
+    - monitoring
+series:
+    - focal
+    - bionic
+    - xenial
+requires:
+    kube-control:
+        interface: kube-control
+    kube-api-endpoint:
+        interface: http
+provides:
+    nrpe-external-master:
+        interface: nrpe-external-master
+        scope: container
+        optional: true
+subordinate: false
