@@ -1,25 +1,45 @@
 import logging
+import ssl
+import os
 
+from charmhelpers.fetch import snap
 from charmhelpers.core import host
 from charmhelpers.contrib.charmsupport.nrpe import NRPE
 
 class KSCHelper():
-    def __init__(self, config):
-        """Initialize the Helper with the config"""
-        self.charm_config = config
+    def __init__(self, config, state):
+        """Initialize the Helper with the config and state"""
+        self.config = config
+        self.state = state
 
     def configure(self):
         """Refresh configuration data"""
-        logging.info("Configuring Kubernetes Service Checks")
+        pass
 
-    def update_k8s_endpoint(self, k8s_address, k8s_port):
-        self.k8s_endpoint = "https://{}:{}".format(k8s_address, k8s_port)
+    @property
+    def kubernetes_api_address(self):
+        return self.state.kube_api_endpoint.get("hostname", None)
 
-    def render_kube_config(self, creds):
-        """Render the Nagios .kube/config from template"""
-        render(source='kube.config', target=self.kubeconfig, context=creds,
-               owner='nagios', group='nagios')
-        # TOFIX: render the config to the host?
+    def kubernetes_api_port(self):
+        return self.state.kube_api_endpoint.get("port", None)
+
+    @property
+    def client_token(self):
+        token = None
+        for _, creds in self.state.kube_control.get("creds", {}).items():
+            token = creds.get("client_token", None)
+        return token
+
+    @property
+    def trusted_ssl_cert(self):
+        return self.config.get("trusted_ssl_cert")
+
+    def kuberntes_cert_path(self):
+        return "/etc/ssl/certs/ca-certificates.crt"
+
+    @property
+    def plugins_dir(self):
+        return '/usr/local/lib/nagios/plugins/'
 
     def update_plugins(self):
         charm_plugin_dir = os.path.join(hookenv.charm_dir(), 'files', 'plugins/')
@@ -40,7 +60,25 @@ class KSCHelper():
         #               check_cmd=check_command,
         #               )
 
-# TODO: get_credentials - either from a relation or from the config - Goes in Charm
-#    creds = get_credentials()
-#    if not creds:
-#        return
+    # ssl.get_server_certificate(("10.132.251.23" ," 6443"))
+    # url health ep = /healthz
+    # http=urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
+    # r = http.request('GET', url, headers={"Authorization": "Bearer {}".format(client_token)})
+
+    def install_kubectl(self):
+        """ Attempt to install kubectl
+
+        :returns: bool, indicating whether or not successful
+        """
+        # snap retry is excessive
+        snap.SNAP_NO_LOCK_RETRY_DELAY = 0.5
+        snap.SNAP_NO_LOCK_RETRY_COUNT = 3
+        try:
+            channel = self.config['channel']
+            snap.snap_install("kubectl",
+                              "--classic",
+                              "--channel={}".format(channel)
+                              )
+            return True
+        except snap.CouldNotAcquireLockException:
+            return False

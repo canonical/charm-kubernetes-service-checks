@@ -10,8 +10,6 @@ import logging
 import setuppath  # noqa:F401
 from lib_kubernetes_service_checks import KSCHelper
 
-from charmhelpers.fetch import snap
-
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
@@ -30,36 +28,35 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.framework.observe(self.on.install, self.on_install)
         self.framework.observe(self.on.start, self.on_start)
         self.framework.observe(self.on.config_changed, self.on_config_changed)
+        self.framework.observe(
+            self.on.kube_api_endpoint_relation_changed,
+            self.on_kube_api_endpoint_relation_changed,
+        )
+        self.framework.observe(
+            self.on.kube_control_relation_changed,
+            self.on_kube_control_relation_changed,
+        )
+        self.framework.observe(
+            self.on.nrpe_external_master_relation_joined,
+            self.on_nrpe_external_master_relation_joined
+        )
+        self.framework.observe(
+            self.on.nrpe_external_master_relation_departed,
+            self.on_nrpe_external_master_relation_departed
+        )
         # -- initialize states --
         self.state.set_default(installed=False)
         self.state.set_default(configured=False)
         self.state.set_default(started=False)
-
-        self.helper = KSCHelper(self.model.config)
-        # snap retry is excessive
-        snap.SNAP_NO_LOCK_RETRY_DELAY = 0.5
-        snap.SNAP_NO_LOCK_RETRY_COUNT = 3
+        self.state.set_default(kube_control={})
+        self.state.set_default(kube_api_endpoint={})
+        self.state.set_default(nrpe_configured=False)
+        self.helper = KSCHelper(self.model.config, self.state)
 
     def on_install(self, event):
         """Handle install state."""
-        self.unit.status = MaintenanceStatus("Installing kubectl snap")
-        try:
-            channel = self.model.config['channel']
-            snap.snap_install("kubectl",
-                              "--classic",
-                              "--channel={}".format(channel)
-                              )
-        except snap.CouldNotAcquireLockException:
-            self.unit.status = BlockedStatus("kubectl failed to install")
-            logging.error(
-                "Could not install resource, deferring event: {}".format(event.handle)
-            )
-            self._defer_once(event)
-
-            return
-        # TODO: What else is needed for KSC?
-
-
+        # TOFIX: installing kubectl isnt necessary
+        self.unit.status = MaintenanceStatus("Installing charm software")
         self.unit.status = MaintenanceStatus("Install complete")
         logging.info("Install of software complete")
         self.state.installed = True
@@ -70,37 +67,45 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         logging.info("Reinstalling for upgrade-charm hook")
         self.on_install(event)
 
+    def check_charm_status(self):
+        """Check that required data is available from relations and set charm's state"""
+        # check that relations are configured with expected data
+        if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
+            logging.warning("kubernetes-api-endpoint relation missing or misconfigured")
+            self.unit.status = BlockedStatus("Missing kubernetes-api-endpoint relation")
+            return
+        if not self.helper.client_token:
+            logging.warning("kubernetes-control relation missing or misconfigured")
+            self.unit.status = BlockedStatus("Missing kubernetes-control relation")
+            return
+        if not self.state.nrpe_configured:
+            logging.warning("nrpe-external-master relation missing")
+            self.unit.status = BlockedStatus("Missing nrpe-external-master relation")
+            return
+
+        # check specific config values if necessary
+        # TODO
+
+        # configure checks
+        logging.info("Configuring Kubernetes Service Checks")
+        helper.configure()
+        self.state.configured = True
+
+
     def on_config_changed(self, event):
         """Handle config changed."""
-
+        self.state.configured = False
         if not self.state.installed:
             logging.warning("Config changed called before install complete, deferring event: {}.".format(event.handle))
             self._defer_once(event)
-
             return
-
-        # Reconfigure helper with new config values
-        self.helper.configure()
-
-        # TODO: Do any host services need to be restarted?
-        # host.service_restart(self.helper.service_name)
-
-        # TODO: check if the 'channel' config has been changed - may need to call install again to update kubectl
-
-        if self.state.started:
-            # Stop if necessary for reconfig
-            logging.info("Stopping for configuration, event handle: {}".format(event.handle))
-        # Configure the software
-        logging.info("Configuring")
-        self.state.configured = True
+        self.check_charm_status()
 
     def on_start(self, event):
         """Handle start state."""
-
         if not self.state.configured:
             logging.warning("Start called before configuration complete, deferring event: {}".format(event.handle))
-            self._defer_once(event)
-
+            event.defer()
             return
         self.unit.status = MaintenanceStatus("Starting charm software")
         # Start software
@@ -126,29 +131,27 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             logging.debug("Deferring {} notice count of {}".format(handle, notice_count))
             event.defer()
 
-
     def on_kube_api_endpoint_relation_changed(self, event):
-        """Handle kube_api_endpoint relation change event, which will """
-        kube_api_server = event.relation.data[event.unit].get("private-address")
-        kube_api_port = event.relation.data[event.unit].get("port")
+        """ Handle kube_api_endpoint relation change event by importing the
+        provided hostname and port to KSCHelper.
+        """
+        self.unit.status = MaintenanceStatus("Updating K8S Endpoint")
+        self.state.kube_api_endpoint.update(event.relation.data[event.unit])
+        self.check_charm_status()
 
-        self.unit.status = MaintenanceStatus("Configuring K8S Endpoint")
-        self.helper.update_k8s_endpoint(kube_api_server, kube_api_port)
-        event.log("Retrieved Kubernetes Master URL: {}".format(helper.k8s_endpoint))
+    def on_kube_control_relation_changed(self, event):
+        self.unit.status = MaintenanceStatus("Updating K8S Credentials")
+        #kube_creds = event.relation.data[event.unit].get("creds", None)
+        self.state.kube_control.update(event.relation.data[event.unit])
+        self.check_charm_status()
 
-        self.state._k8s_endpoint_configured = True
-        #if self.mysql.is_ready:
-        #    event.log("Database relation complete")
-        #self.state._db_configured = True
+    def on_nrpe_external_master_relation_joined(self, event):
+        self.state.nrpe_configured = True
+        self.check_charm_status()
 
-    #def on__relation_changed(self, event):
-
-'''
-    def on_example_action(self, event):
-        """Handle the example_action action."""
-        event.log("Hello from the example action.")
-        event.set_results({"success": "true"})
-'''
+    def on_nrpe_external_master_relation_departed(self, event):
+        self.state.nrpe_configured = False
+        self.check_charm_status()
 
 if __name__ == "__main__":
     from ops.main import main
