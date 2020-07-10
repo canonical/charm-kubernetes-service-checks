@@ -6,15 +6,32 @@ from charmhelpers.fetch import snap
 from charmhelpers.core import host
 from charmhelpers.contrib.charmsupport.nrpe import NRPE
 
+CERT_FILE = "/usr/local/share/ca-certificates/kubernetes-service-checks.crt"
+
 class KSCHelper():
     def __init__(self, config, state):
         """Initialize the Helper with the config and state"""
         self.config = config
         self.state = state
 
+    def _update_tls_certificates(self):
+        if self._ssl_certificate:
+            try:
+                with open(CERT_FILE, "w") as f:
+                    f.write(self._ssl_certificate)
+                subprocess.call(['/usr/sbin/update-ca-certificates'])
+                return True
+            except subprocess.CalledProcessError as e:
+                logging.error(e)
+                return False
+            except PermissionError as e:
+                logging.error(e)
+                return False
+
     def configure(self):
         """Refresh configuration data"""
-        pass
+        self.update_plugins()
+        self.render_checks()
 
     @property
     def kubernetes_api_address(self):
@@ -32,17 +49,30 @@ class KSCHelper():
         return token
 
     @property
-    def trusted_ssl_cert(self):
-        return self.config.get("trusted_ssl_cert")
+    def kubernetes_cert_path(self):
+        return "kubernetes-service-checks.crt"
 
-    def kuberntes_cert_path(self):
-        return "/etc/ssl/certs/ca-certificates.crt"
+    @property
+    def use_tls_cert(self):
+        return self._ssl_certificate is not None
+
+    @property
+    def _ssl_certificate(self):
+        # TODO: Expand this later to take a cert from a relation or from the config.
+        # cert from the relation is to be prioritized
+        ssl_cert = self.config.get("trusted_ssl_ca", None)
+        if ssl_cert:
+            ssl_cert = ssl_cert.strip()
+        return ssl_cert
 
     @property
     def plugins_dir(self):
         return '/usr/local/lib/nagios/plugins/'
 
     def update_plugins(self):
+        """ Rsync the Kubernetes Service Checks charm provided plugins to the
+        plugin directory.
+        """
         charm_plugin_dir = os.path.join(hookenv.charm_dir(), 'files', 'plugins/')
         host.rsync(charm_plugin_dir, self.plugins_dir, options=['--executability'])
 

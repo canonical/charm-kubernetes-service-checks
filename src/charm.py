@@ -73,19 +73,29 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
 
         if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
             logging.warning("kubernetes-api-endpoint relation missing or misconfigured")
-            self.unit.status = BlockedStatus("Missing kubernetes-api-endpoint relation")
+            self.unit.status = BlockedStatus("missing kubernetes-api-endpoint relation")
             return
         if not self.helper.client_token:
             logging.warning("kubernetes-control relation missing or misconfigured")
-            self.unit.status = BlockedStatus("Missing kubernetes-control relation")
+            self.unit.status = BlockedStatus("missing kubernetes-control relation")
             return
         if not self.state.nrpe_configured:
             logging.warning("nrpe-external-master relation missing")
-            self.unit.status = BlockedStatus("Missing nrpe-external-master relation")
+            self.unit.status = BlockedStatus("missing nrpe-external-master relation")
             return
 
         # check specific config values if necessary
-        # TODO
+        # Set up TLS Certificate
+        if self.helper.use_tls_cert:
+            logging.info("Updating tls certificates")
+            if self.helper._update_tls_certificates():
+                logging.info("TLS Certificates updated successfully")
+            else:
+                logging.error("Failed to update TLS Certificates")
+                self.unit.status = BlockedStatus("update-ca-certificates error. check logs")
+        else:
+            logging.warn("No trusted_ssl_ca provided, SSL Host Authentication disabled")
+
 
         # configure checks
         logging.info("Configuring Kubernetes Service Checks")
