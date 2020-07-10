@@ -19,5 +19,5 @@ Provide instructions for scaling this charm.
 
 Contact
 -------
- - Author: Ryan Farrell <ryan.farrell@canonical.com>
+ - Author: Llama Charmers <llama-charmers@lists.ubuntu.com>
  - Bug Tracker: [here](https://launchpad.net/charm-kubernetes-service-checks)

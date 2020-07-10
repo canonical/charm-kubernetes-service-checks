@@ -20,6 +20,7 @@ class KSCHelper():
     def kubernetes_api_address(self):
         return self.state.kube_api_endpoint.get("hostname", None)
 
+    @property
     def kubernetes_api_port(self):
         return self.state.kube_api_endpoint.get("port", None)
 
@@ -59,11 +60,6 @@ class KSCHelper():
         #               description='Check that enabled Nova services are up',
         #               check_cmd=check_command,
         #               )
-
-    # ssl.get_server_certificate(("10.132.251.23" ," 6443"))
-    # url health ep = /healthz
-    # http=urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
-    # r = http.request('GET', url, headers={"Authorization": "Bearer {}".format(client_token)})
 
     def install_kubectl(self):
         """ Attempt to install kubectl

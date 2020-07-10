@@ -13,6 +13,17 @@ from charm import Kubernetes_Service_ChecksCharm
 import ops.main
 from ops.testing import Harness
 
+TEST_KUBE_CONTOL_RELATION_DATA = {"creds":
+                                    {"system:node:juju-62684f-0":
+                                      {"client_token": "DECAFBADBEEF",
+                                       "kubelet_token": "ABCDEF012345",
+                                       "proxy_token": "BADC0FFEEDAD",
+                                       "scope": "kubernetes-worker/0"}
+                                    }
+                                  }
+TEST_KUBE_API_ENDPOINT_RELATION_DATA = {"hostname": "1.1.1.1",
+                                        "port": "1111"}
+
 #class TestCharm(OperatorTestCase):
 class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
 
@@ -103,10 +114,10 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
         self.harness.set_leader(True)
         self.harness.populate_oci_resources()
         self.harness.begin()
+        self.harness.charm.check_charm_status = mock.MagicMock()
         self.harness.charm.state.installed = True
         self.harness.charm.on.config_changed.emit()
-        self.assertTrue(self.harness.charm.state.configured)
-        # TODO: check that KSCHelper update is called
+        self.harness.charm.check_charm_status.assert_called_once()
 
     def test_start_not_installed(self):
         """Test response to start event without install state."""
@@ -129,6 +140,110 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
         self.harness.charm.on.start.emit()
         self.assertTrue(self.harness.charm.state.started)
         self.assertEqual(self.harness.charm.unit.status.name, "active")
+
+    def test_on_kube_api_endpoint_relation_changed(self):
+        relation_id = self.harness.add_relation('kube-api-endpoint', 'kubernetes-master')
+        remote_unit = "kubernetes-master/0"
+        self.harness.begin()
+        self.harness.charm.check_charm_status = mock.MagicMock()
+        self.harness.add_relation_unit(relation_id, remote_unit)
+        self.harness.update_relation_data(relation_id, remote_unit, TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+
+        self.harness.charm.check_charm_status.assert_called_once()
+        self.assertEqual(self.harness.charm.helper.kubernetes_api_address, "1.1.1.1")
+        self.assertEqual(self.harness.charm.helper.kubernetes_api_port, "1111")
+
+    def test_on_kube_control_relation_changed(self):
+        relation_id = self.harness.add_relation('kube-control', 'kubernetes-master')
+        remote_unit = "kubernetes-master/0"
+        self.harness.begin()
+        self.harness.charm.check_charm_status = mock.MagicMock()
+        self.harness.add_relation_unit(relation_id, remote_unit)
+        self.harness.update_relation_data(relation_id, remote_unit, TEST_KUBE_CONTOL_RELATION_DATA)
+
+        self.harness.charm.check_charm_status.assert_called_once()
+        assert self.harness.charm.helper.client_token == "DECAFBADBEEF"
+
+    def test_nrpe_external_master_relation_joined(self):
+        relation_id = self.harness.add_relation('nrpe-external-master', 'nrpe')
+        remote_unit = "nrpe/0"
+        self.harness.begin()
+        self.assertFalse(self.harness.charm.state.nrpe_configured)
+        self.harness.charm.check_charm_status = mock.MagicMock()
+        self.harness.add_relation_unit(relation_id, remote_unit)
+
+        self.harness.charm.check_charm_status.assert_called_once()
+        self.assertTrue(self.harness.charm.state.nrpe_configured)
+
+    @mock.patch("ops.model.RelationData")
+    def test_nrpe_external_master_relation_departed(self, mock_relation_data):
+        mock_relation_data.return_value.__getitem__.return_value = {}
+        self.harness.begin()
+        self.harness.charm.check_charm_status = mock.MagicMock()
+        self.emit("nrpe_external_master_relation_departed")
+        self.harness.charm.check_charm_status.assert_called_once()
+
+        self.assertFalse(self.harness.charm.state.nrpe_configured)
+
+    def test_check_charm_status_kube_api_endpoint_relation_missing(self):
+        self.harness.begin()
+        self.harness.charm.state.kube_control.update(TEST_KUBE_CONTOL_RELATION_DATA)
+        self.harness.charm.state.nrpe_configured = True
+        self.harness.charm.check_charm_status()
+
+        self.assertFalse(self.harness.charm.state.configured)
+        self.assertEqual(self.harness.charm.unit.status.name, "blocked")
+
+    def test_check_charm_status_kube_control_relation_missing(self):
+        self.harness.begin()
+        self.harness.charm.state.kube_api_endpoint.update(TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+        self.harness.charm.state.nrpe_configured = True
+        self.harness.charm.check_charm_status()
+
+        self.assertFalse(self.harness.charm.state.configured)
+        self.assertEqual(self.harness.charm.unit.status.name, "blocked")
+        self.assertEqual(self.harness.charm.unit.status.message, "Missing kubernetes-control relation")
+
+    def test_check_charm_status_nrpe_relation_missing(self):
+        self.harness.begin()
+        self.harness.charm.state.kube_control.update(TEST_KUBE_CONTOL_RELATION_DATA)
+        self.harness.charm.state.kube_api_endpoint.update(TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+        self.harness.charm.check_charm_status()
+
+        self.assertFalse(self.harness.charm.state.configured)
+        self.assertEqual(self.harness.charm.unit.status.name, "blocked")
+        self.assertEqual(self.harness.charm.unit.status.message, "Missing nrpe-external-master relation")
+
+    def test_check_charm_status_configured(self):
+        self.harness.begin()
+        self.harness.charm.helper.configure = mock.MagicMock()
+        self.harness.charm.state.kube_control.update(TEST_KUBE_CONTOL_RELATION_DATA)
+        self.harness.charm.state.kube_api_endpoint.update(TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+        self.harness.charm.state.nrpe_configured = True
+        self.harness.charm.check_charm_status()
+
+        self.harness.charm.helper.configure.assert_called_once()
+        self.assertTrue(self.harness.charm.state.configured)
+
+
+    def emit(self, event):
+        """Emit the named hook on the charm."""
+        self.harness.charm.framework.reemit()
+
+        if "_relation_" in event:
+            relation_name = event.split("_relation")[0].replace("_", "-")
+            with mock.patch.dict(
+                "os.environ",
+                {
+                    "JUJU_RELATION": relation_name,
+                    "JUJU_RELATION_ID": "1",
+                    "JUJU_REMOTE_APP": "mock",
+                    "JUJU_REMOTE_UNIT": "mock/0",
+                },
+            ):
+                ops.main._emit_charm_event(self.harness.charm, event)
+        else:
+            ops.main._emit_charm_event(self.harness.charm, event)
 
 
 if __name__ == "__main__":

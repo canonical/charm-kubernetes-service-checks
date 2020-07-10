@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
-# Copyright © 2020 Ryan Farrell ryan.farrell@canonical.com
+# Copyright © 2020 Llama Charmers  llama-charmers@lists.ubuntu.com
 
 """Operator Charm main library."""
 # Load modules from lib directory
@@ -70,6 +70,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
     def check_charm_status(self):
         """Check that required data is available from relations and set charm's state"""
         # check that relations are configured with expected data
+
         if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
             logging.warning("kubernetes-api-endpoint relation missing or misconfigured")
             self.unit.status = BlockedStatus("Missing kubernetes-api-endpoint relation")
@@ -88,13 +89,12 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
 
         # configure checks
         logging.info("Configuring Kubernetes Service Checks")
-        helper.configure()
+        self.helper.configure()
         self.state.configured = True
 
 
     def on_config_changed(self, event):
         """Handle config changed."""
-        self.state.configured = False
         if not self.state.installed:
             logging.warning("Config changed called before install complete, deferring event: {}.".format(event.handle))
             self._defer_once(event)
@@ -141,7 +141,6 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
 
     def on_kube_control_relation_changed(self, event):
         self.unit.status = MaintenanceStatus("Updating K8S Credentials")
-        #kube_creds = event.relation.data[event.unit].get("creds", None)
         self.state.kube_control.update(event.relation.data[event.unit])
         self.check_charm_status()
 
@@ -152,6 +151,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
     def on_nrpe_external_master_relation_departed(self, event):
         self.state.nrpe_configured = False
         self.check_charm_status()
+
 
 if __name__ == "__main__":
     from ops.main import main
