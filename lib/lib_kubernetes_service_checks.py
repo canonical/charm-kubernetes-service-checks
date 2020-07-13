@@ -1,37 +1,20 @@
 import logging
 import ssl
 import os
+import subprocess
 
 from charmhelpers.fetch import snap
 from charmhelpers.core import host
 from charmhelpers.contrib.charmsupport.nrpe import NRPE
 
 CERT_FILE = "/usr/local/share/ca-certificates/kubernetes-service-checks.crt"
+NAGIOS_PLUGINS_DIR = "/usr/local/lib/nagios/plugins/"
 
 class KSCHelper():
     def __init__(self, config, state):
         """Initialize the Helper with the config and state"""
         self.config = config
         self.state = state
-
-    def _update_tls_certificates(self):
-        if self._ssl_certificate:
-            try:
-                with open(CERT_FILE, "w") as f:
-                    f.write(self._ssl_certificate)
-                subprocess.call(['/usr/sbin/update-ca-certificates'])
-                return True
-            except subprocess.CalledProcessError as e:
-                logging.error(e)
-                return False
-            except PermissionError as e:
-                logging.error(e)
-                return False
-
-    def configure(self):
-        """Refresh configuration data"""
-        self.update_plugins()
-        self.render_checks()
 
     @property
     def kubernetes_api_address(self):
@@ -42,15 +25,11 @@ class KSCHelper():
         return self.state.kube_api_endpoint.get("port", None)
 
     @property
-    def client_token(self):
+    def kubernetes_client_token(self):
         token = None
         for _, creds in self.state.kube_control.get("creds", {}).items():
             token = creds.get("client_token", None)
         return token
-
-    @property
-    def kubernetes_cert_path(self):
-        return "kubernetes-service-checks.crt"
 
     @property
     def use_tls_cert(self):
@@ -66,30 +45,75 @@ class KSCHelper():
         return ssl_cert
 
     @property
+    def ssl_cert_path(self):
+        return CERT_FILE
+
+    @property
     def plugins_dir(self):
-        return '/usr/local/lib/nagios/plugins/'
+        return NAGIOS_PLUGINS_DIR
+
+    def _update_tls_certificates(self):
+        """Write the trusted ssl certificate to the CERT_FILE"""
+        if self._ssl_certificate:
+            try:
+                with open(self.ssl_cert_path, "w") as f:
+                    f.write(self._ssl_certificate)
+                subprocess.call(['/usr/sbin/update-ca-certificates'])
+                return True
+            except subprocess.CalledProcessError as e:
+                logging.error(e)
+                return False
+            except PermissionError as e:
+                logging.error(e)
+                return False
+        subprocess.call(["pwd"])
+        logging.error("Trusted SSL Certificate is not defined")
+        return False
+
+    def configure(self):
+        """Refresh configuration data"""
+        self.update_plugins()
+        self.render_checks()
 
     def update_plugins(self):
-        """ Rsync the Kubernetes Service Checks charm provided plugins to the
+        """Rsync the Kubernetes Service Checks charm provided plugins to the
         plugin directory.
         """
-        charm_plugin_dir = os.path.join(hookenv.charm_dir(), 'files', 'plugins/')
-        host.rsync(charm_plugin_dir, self.plugins_dir, options=['--executability'])
+        charm_plugin_dir = os.path.join(hookenv.charm_dir(), "files", "plugins/")
+        host.rsync(charm_plugin_dir, self.plugins_dir, options=["--executability"])
 
     def render_checks(self):
         nrpe = NRPE()
         if not os.path.exists(self.plugins_dir):
             os.makedirs(self.plugins_dir)
-        self.update_plugins()
 
-        k8s_check_command = os.path.join(self.plugins_dir, 'check_k8s_services.py')
-        #check_command = '{} --warn {} --crit {} --skip-aggregates {} {}'.format(
-        #    k8s_check_command, self.nova_warn, self.nova_crit, self.nova_skip_aggregates,
-        #    self.skip_disabled).strip()
-        #nrpe.add_check(shortname='nova_services',
-        #               description='Check that enabled Nova services are up',
-        #               check_cmd=check_command,
-        #               )
+        # register basic api health check
+        check_k8s_plugin = os.path.join(self.plugins_dir, "check_kubernetes_api.py")
+        for check in ["health"]:
+            check_command = "{} -H {} -P {} -T {} --check {}".format(
+                check_k8s_plugin,
+                self.kubernetes_api_address,
+                self.kubernetes_api_port,
+                self.kubernetes_client_token,
+                check
+            ).strip()
+            # TODO: Add -C if cert check required.
+
+            nrpe.add_check(
+                shortname="kubernetes_api",
+                description="Check Kubernetes API ()".format(check),
+                check_cmd=check_command,
+            )
+
+        # register k8s host certificate expiration check
+        check_http_plugin = "/usr/lib/nagios/plugins/check_http"
+        check_command = "{} -I {} -p {} -C {},{}".format(
+            check_http_plugin,
+            self.kubernetes_api_address,
+            self.kubernetes_api_port,
+            self.config.get("tls_warn_days"),
+            self.config.get("tls_crit_days")
+        ).strip()
 
     def install_kubectl(self):
         """ Attempt to install kubectl

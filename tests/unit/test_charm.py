@@ -24,7 +24,6 @@ TEST_KUBE_CONTOL_RELATION_DATA = {"creds":
 TEST_KUBE_API_ENDPOINT_RELATION_DATA = {"hostname": "1.1.1.1",
                                         "port": "1111"}
 
-#class TestCharm(OperatorTestCase):
 class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
 
     @classmethod
@@ -44,6 +43,12 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
         # Stop charmhelpers snap from logging via debug log
         snap_log_patcher = mock.patch("charmhelpers.fetch.snap.log")
         cls.mock_snap_log = snap_log_patcher.start()
+
+        charm_logger_patcher = mock.patch("charm.logging")
+        cls.mock_charm_log = charm_logger_patcher.start()
+
+        lib_logger_patcher = mock.patch("lib.lib_kubernetes_service_checks.logging")
+        cls.mock_lib_logger = lib_logger_patcher.start()
 
         # Prevent charmhelpers from calling systemctl
         host_service_patcher = mock.patch("charmhelpers.core.host.service_stop")
@@ -86,28 +91,9 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
         # check that kubectl snap install is called
         channel = self.harness._backend._config["channel"]
 
-#        mock_snap_subprocess.assert_called_with(["snap",
-#                                                 "install",
-#                                                 "--classic",
-#                                                 "--channel={}".format(channel),
-#                                                 "kubectl"], env=os.environ)
         self.assertEqual(self.harness.charm.unit.status.name, "maintenance")
         self.assertEqual(self.harness.charm.unit.status.message, "Install complete")
-
         self.assertTrue(self.harness.charm.state.installed)
-
-#    @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")
-#    def test_install_snap_failure(self, mock_snap_subprocess):
-#        """Test response to a failed install event."""
-#        error = subprocess.CalledProcessError("cmd", "Install failed")
-#        error.returncode = 1
-#        mock_snap_subprocess.return_value = 1
-#        mock_snap_subprocess.side_effect = error
-
-#        self.harness.begin()
-#        self.harness.charm.on.install.emit()
-#        self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-#        self.assertEqual(self.harness.charm.unit.status.message, "kubectl failed to install")
 
     def test_config_changed(self):
         """Test response to config changed event."""
@@ -162,7 +148,7 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
         self.harness.update_relation_data(relation_id, remote_unit, TEST_KUBE_CONTOL_RELATION_DATA)
 
         self.harness.charm.check_charm_status.assert_called_once()
-        assert self.harness.charm.helper.client_token == "DECAFBADBEEF"
+        assert self.harness.charm.helper.kubernetes_client_token == "DECAFBADBEEF"
 
     def test_nrpe_external_master_relation_joined(self):
         relation_id = self.harness.add_relation('nrpe-external-master', 'nrpe')
@@ -202,7 +188,7 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
 
         self.assertFalse(self.harness.charm.state.configured)
         self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-        self.assertEqual(self.harness.charm.unit.status.message, "Missing kubernetes-control relation")
+        self.assertEqual(self.harness.charm.unit.status.message, "missing kubernetes-control relation")
 
     def test_check_charm_status_nrpe_relation_missing(self):
         self.harness.begin()
@@ -212,7 +198,7 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
 
         self.assertFalse(self.harness.charm.state.configured)
         self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-        self.assertEqual(self.harness.charm.unit.status.message, "Missing nrpe-external-master relation")
+        self.assertEqual(self.harness.charm.unit.status.message, "missing nrpe-external-master relation")
 
     def test_check_charm_status_configured(self):
         self.harness.begin()

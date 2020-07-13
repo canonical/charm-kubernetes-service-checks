@@ -41,6 +41,10 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             self.on_nrpe_external_master_relation_joined
         )
         self.framework.observe(
+            self.on.nrpe_external_master_relation_changed,
+            self.on_nrpe_external_master_relation_changed
+        )
+        self.framework.observe(
             self.on.nrpe_external_master_relation_departed,
             self.on_nrpe_external_master_relation_departed
         )
@@ -75,7 +79,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             logging.warning("kubernetes-api-endpoint relation missing or misconfigured")
             self.unit.status = BlockedStatus("missing kubernetes-api-endpoint relation")
             return
-        if not self.helper.client_token:
+        if not self.helper.kubernetes_client_token:
             logging.warning("kubernetes-control relation missing or misconfigured")
             self.unit.status = BlockedStatus("missing kubernetes-control relation")
             return
@@ -157,6 +161,12 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
     def on_nrpe_external_master_relation_joined(self, event):
         self.state.nrpe_configured = True
         self.check_charm_status()
+
+    def on_nrpe_external_master_relation_changed(self, event):
+        pass
+        # need to provide some NRPE values
+        #nagios_host_context: bootstack - okcupid - wa
+        #nagios_hostname: bootstack - okcupid - wa - openstack - service - checks - 0
 
     def on_nrpe_external_master_relation_departed(self, event):
         self.state.nrpe_configured = False

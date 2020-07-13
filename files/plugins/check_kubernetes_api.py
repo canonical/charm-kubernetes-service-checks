@@ -16,7 +16,7 @@ NAGIOS_STATUS = {
 def nagios_exit(status, message):
     assert status in NAGIOS_STATUS, "Invalid Nagios status code"
     # prefix status name to message
-    output = '{}: {}'.format(NAGIOS_STATUS[status], message)
+    output = "{}: {}".format(NAGIOS_STATUS[status], message)
     print(output)  # nagios requires print to stdout, no stderr
     sys.exit(status)
 
@@ -30,12 +30,12 @@ def check_kubernetes_health(k8s_address, client_token, ssl_ca):
     url = k8s_address + "/healthz"
     if ssl_ca is None or not os.path.exits(ssl_ca):
         # perform check without SSL verification
-        http=urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False)
+        http=urllib3.PoolManager(cert_reqs="CERT_NONE", assert_hostname=False)
     else:
-        http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_file=ssl_ca)
+        http = urllib3.PoolManager(cert_reqs="CERT_REQUIRED", ca_file=ssl_ca)
 
     try:
-        req = http.request('GET', url,
+        req = http.request("GET", url,
                            headers={"Authorization": "Bearer {}".format(client_token)}
                           )
     except urllib3.exceptions.MaxRetryError as e:
@@ -43,7 +43,7 @@ def check_kubernetes_health(k8s_address, client_token, ssl_ca):
 
     if req.status != 200:
         return NAGIOS_STATUS_CRITICAL, "Unexpected HTTP Response code ({})".format(req.status)
-    elif req.data != b'ok':
+    elif req.data != b"ok":
         return NAGIOS_STATUS_WARNING, "Unexpected Kubernetes healthz status '{}'".format(req.data)
     return NAGIOS_STATUS_OK, "Kubernetes health 'ok'".format()
 
@@ -54,35 +54,35 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--host", dest="host",
+        "-H", "--host", dest="host",
         help="Hostname or IP of the kube-api-server"
     )
 
     parser.add_argument(
-        "--port", dest="port", type=int, default=6443,
+        "-P", "--port", dest="port", type=int, default=6443,
         help="Port of the kube-api-server"
     )
 
     parser.add_argument(
-        "--token", dest="client_token",
+        "-T", "--token", dest="client_token",
         help="Client access token for authenticate with the Kubernetes API"
     )
 
-    check_choices = ['health']
+    check_choices = ["health"]
     parser.add_argument(
-        '--check', dest='check', metavar='|'.join(check_choices),
+        "--check", dest="check", metavar="|".join(check_choices),
         type=str, choices=check_choices,
         default=check_choices[0],
-        help='which check to run')
+        help="which check to run")
 
     parser.add_argument(
-        '--trusted-ca-cert', dest="ssl_ca_path", type=str, default=None,
+        "-C", "--trusted-ca-cert", dest="ssl_ca_path", type=str, default=None,
         help="String containing path to the trusted CA certificate"
     )
     args = parser.parse_args()
 
     checks = {
-        'health': check_loadbalancers,
+        "health": check_kubernetes_health,
     }
 
     k8s_url = "https://{}:{}".format(args.host, args.port)
