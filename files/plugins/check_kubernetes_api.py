@@ -1,5 +1,7 @@
 import argparse
 import urllib3
+import sys
+import os
 
 NAGIOS_STATUS_OK = 0
 NAGIOS_STATUS_WARNING = 1
@@ -28,16 +30,21 @@ def check_kubernetes_health(k8s_address, client_token, ssl_ca):
     :param ssl_ca: path to SSL CA certificate for authenticating the kube-api cert
     """
     url = k8s_address + "/healthz"
-    if ssl_ca is None or not os.path.exits(ssl_ca):
+    if ssl_ca is None or not os.path.exists(ssl_ca):
         # perform check without SSL verification
-        http=urllib3.PoolManager(cert_reqs="CERT_NONE", assert_hostname=False)
+        http = urllib3.PoolManager(
+            cert_reqs="CERT_NONE",
+            assert_hostname=False
+        )
     else:
         http = urllib3.PoolManager(cert_reqs="CERT_REQUIRED", ca_file=ssl_ca)
 
     try:
-        req = http.request("GET", url,
-                           headers={"Authorization": "Bearer {}".format(client_token)}
-                          )
+        req = http.request(
+            "GET",
+            url,
+            headers={"Authorization": "Bearer {}".format(client_token)}
+        )
     except urllib3.exceptions.MaxRetryError as e:
         return NAGIOS_STATUS_CRITICAL, e
 
@@ -45,7 +52,8 @@ def check_kubernetes_health(k8s_address, client_token, ssl_ca):
         return NAGIOS_STATUS_CRITICAL, "Unexpected HTTP Response code ({})".format(req.status)
     elif req.data != b"ok":
         return NAGIOS_STATUS_WARNING, "Unexpected Kubernetes healthz status '{}'".format(req.data)
-    return NAGIOS_STATUS_OK, "Kubernetes health 'ok'".format()
+    return NAGIOS_STATUS_OK, "Kubernetes health 'ok'"
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
