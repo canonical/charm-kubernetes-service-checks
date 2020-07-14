@@ -35,4 +35,4 @@ options:
     type: string
     default: ""
     description: |
-      base64 encoded SSL ca cert to use for OpenStack API client connections.
+      base64 encoded SSL ca cert to use for Kubernetes API client connections.
