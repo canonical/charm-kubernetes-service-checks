@@ -3,7 +3,7 @@ tests:
 target_deploy_status:
     kubernetes-service-checks:
         workload-status: blocked
-        workload-status-message: "missing kubernetes-api-endpoint relation"
+        workload-status-message: "missing kube-api-endpoint relation"
     kubernetes-master:
         workload-status: active
         workload-status-message: "Kubernetes master running."
