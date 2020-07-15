@@ -97,3 +97,18 @@ if __name__ == "__main__":
     nagios_exit(*checks[args.check](k8s_url,
                                     args.client_token,
                                     args.ssl_ca_path))
+
+"""
+Future Checks
+
+GET /api/v1/componentstatuses HTTP/1.1
+Authorization: Bearer $TOKEN
+Accept: application/json
+Connection: close
+
+GET /api/va/nodes HHTP/1.1
+Authorization: Bearer $TOKEN
+Accept: application/json
+Connection: close
+
+"""

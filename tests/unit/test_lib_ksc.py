@@ -20,7 +20,7 @@ class TestLibKSCHelper(unittest.TestCase):
         class FakeStateObject(object):
             kube_api_endpoint = {"hostname": "1.1.1.1",
                                  "port": "1111"}
-            kube_control = {"creds": {"kube-client": {"client_token": "abcdef0123456789"}}}
+            kube_control = {"creds": """{"kube-client": {"client_token": "abcdef0123456789"}}"""}
             installed = False
             configured = False
             started = False
@@ -92,14 +92,12 @@ class TestLibKSCHelper(unittest.TestCase):
     @mock.patch("lib.lib_kubernetes_service_checks.subprocess.call")
     def test_update_tls_certificates(self, mock_subprocess):
         # returns False when no available trusted_ssl_cert
-        self.assertFalse(self.helper._update_tls_certificates())
-        mock_subprocess.assert_called_once()
-        mock_subprocess.reset_mock()
+        self.assertFalse(self.helper.update_tls_certificates())
 
         # returns True when subprocess successful
         self.helper.config["trusted_ssl_ca"] = \
             "BEGIN CERTIFICATE\nCERT-DATA\nEND CERTIFICATE"
-        self.assertTrue(self.helper._update_tls_certificates())
+        self.assertTrue(self.helper.update_tls_certificates())
         with open(self.cert_path, "r") as f:
             self.assertEqual(f.read(), self.helper.config["trusted_ssl_ca"])
         mock_subprocess.assert_called_once_with(['/usr/sbin/update-ca-certificates'])
@@ -107,7 +105,7 @@ class TestLibKSCHelper(unittest.TestCase):
 
         # returns false when subprocess hits an exception
         mock_subprocess.side_effect = CalledProcessError("Command", "Mock Subprocess Call Error")
-        self.assertFalse(self.helper._update_tls_certificates())
+        self.assertFalse(self.helper.update_tls_certificates())
 
     def test_render_checks(self):
         pass

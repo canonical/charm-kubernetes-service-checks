@@ -33,8 +33,16 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             self.on_kube_api_endpoint_relation_changed,
         )
         self.framework.observe(
+            self.on.kube_api_endpoint_relation_departed,
+            self.on_kube_api_endpoint_relation_departed
+        )
+        self.framework.observe(
             self.on.kube_control_relation_changed,
             self.on_kube_control_relation_changed,
+        )
+        self.framework.observe(
+            self.on.kube_control_relation_departed,
+            self.on_kube_control_relation_departed
         )
         self.framework.observe(
             self.on.nrpe_external_master_relation_joined,
@@ -77,11 +85,11 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
 
         if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
             logging.warning("kubernetes-api-endpoint relation missing or misconfigured")
-            self.unit.status = BlockedStatus("missing kubernetes-api-endpoint relation")
+            self.unit.status = BlockedStatus("missing kube-api-endpoint relation")
             return
         if not self.helper.kubernetes_client_token:
             logging.warning("kubernetes-control relation missing or misconfigured")
-            self.unit.status = BlockedStatus("missing kubernetes-control relation")
+            self.unit.status = BlockedStatus("missing kube-control relation")
             return
         if not self.state.nrpe_configured:
             logging.warning("nrpe-external-master relation missing")
@@ -92,7 +100,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         # Set up TLS Certificate
         if self.helper.use_tls_cert:
             logging.info("Updating tls certificates")
-            if self.helper._update_tls_certificates():
+            if self.helper.update_tls_certificates():
                 logging.info("TLS Certificates updated successfully")
             else:
                 logging.error("Failed to update TLS Certificates")
@@ -100,12 +108,11 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         else:
             logging.warn("No trusted_ssl_ca provided, SSL Host Authentication disabled")
 
-
         # configure checks
         logging.info("Configuring Kubernetes Service Checks")
         self.helper.configure()
         self.state.configured = True
-
+        self.unit.status = ActiveStatus("Unit is ready")
 
     def on_config_changed(self, event):
         """Handle config changed."""
@@ -124,6 +131,12 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.unit.status = MaintenanceStatus("Starting charm software")
         # Start software
         # TODO: Do any host services need to be started?
+
+        ## hookenv.log('Reloading nagios-nrpe-server')
+        ## host.service_restart('nagios-nrpe-server')
+        ## hookenv.status_set('active', 'Unit is ready')
+        ## set_flag('openstack-service-checks.started')
+
         # host.service_start(self.helper.service_name)
         self.unit.status = ActiveStatus("Unit is ready")
         self.state.started = True
@@ -153,9 +166,19 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.state.kube_api_endpoint.update(event.relation.data[event.unit])
         self.check_charm_status()
 
+    def on_kube_api_endpoint_relation_departed(self, event):
+        for k in self.state.kube_api_endpoint.keys():
+            self.state.kube_api_endpoint[k] = ""
+        self.check_charm_status()
+
     def on_kube_control_relation_changed(self, event):
         self.unit.status = MaintenanceStatus("Updating K8S Credentials")
         self.state.kube_control.update(event.relation.data[event.unit])
+        self.check_charm_status()
+
+    def on_kube_control_relation_departed(self, event):
+        for k in self.state.kube_control.keys():
+            self.state.kube_control[k] = ""
         self.check_charm_status()
 
     def on_nrpe_external_master_relation_joined(self, event):
@@ -163,10 +186,9 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.check_charm_status()
 
     def on_nrpe_external_master_relation_changed(self, event):
+        ##event.relation.data[event.unit]["nagios_hostname"] = self.model.config.get("nagios_servicegroups")
+        ##event.relation.data[event.unit]["nagios_host_context"] = self.model.config.get("nagios_context")
         pass
-        # need to provide some NRPE values
-        #nagios_host_context: bootstack - okcupid - wa
-        #nagios_hostname: bootstack - okcupid - wa - openstack - service - checks - 0
 
     def on_nrpe_external_master_relation_departed(self, event):
         self.state.nrpe_configured = False

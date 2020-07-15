@@ -14,12 +14,12 @@ import ops.main
 from ops.testing import Harness
 
 TEST_KUBE_CONTOL_RELATION_DATA = {"creds":
-                                    {"system:node:juju-62684f-0":
+                                    """{"system:node:juju-62684f-0":
                                       {"client_token": "DECAFBADBEEF",
                                        "kubelet_token": "ABCDEF012345",
                                        "proxy_token": "BADC0FFEEDAD",
                                        "scope": "kubernetes-worker/0"}
-                                    }
+                                    }"""
                                   }
 TEST_KUBE_API_ENDPOINT_RELATION_DATA = {"hostname": "1.1.1.1",
                                         "port": "1111"}
@@ -179,6 +179,7 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
 
         self.assertFalse(self.harness.charm.state.configured)
         self.assertEqual(self.harness.charm.unit.status.name, "blocked")
+        self.assertEqual(self.harness.charm.unit.status.message, "missing kube-api-endpoint relation")
 
     def test_check_charm_status_kube_control_relation_missing(self):
         self.harness.begin()
@@ -188,7 +189,7 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):
 
         self.assertFalse(self.harness.charm.state.configured)
         self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-        self.assertEqual(self.harness.charm.unit.status.message, "missing kubernetes-control relation")
+        self.assertEqual(self.harness.charm.unit.status.message, "missing kube-control relation")
 
     def test_check_charm_status_nrpe_relation_missing(self):
         self.harness.begin()

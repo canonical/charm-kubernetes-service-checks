@@ -4,7 +4,7 @@ import os
 import subprocess
 
 from charmhelpers.fetch import snap
-from charmhelpers.core import host
+from charmhelpers.core import hookenv, host
 from charmhelpers.contrib.charmsupport.nrpe import NRPE
 
 CERT_FILE = "/usr/local/share/ca-certificates/kubernetes-service-checks.crt"
@@ -27,13 +27,16 @@ class KSCHelper():
     @property
     def kubernetes_client_token(self):
         token = None
-        for _, creds in self.state.kube_control.get("creds", {}).items():
+        data = eval(self.state.kube_control.get("creds", "{}"))
+        for _, creds in data.items():
             token = creds.get("client_token", None)
         return token
 
     @property
     def use_tls_cert(self):
-        return self._ssl_certificate is not None
+        if not self._ssl_certificate:
+            return False
+        return True
 
     @property
     def _ssl_certificate(self):
@@ -52,7 +55,7 @@ class KSCHelper():
     def plugins_dir(self):
         return NAGIOS_PLUGINS_DIR
 
-    def _update_tls_certificates(self):
+    def update_tls_certificates(self):
         """Write the trusted ssl certificate to the CERT_FILE"""
         if self._ssl_certificate:
             try:
@@ -66,9 +69,9 @@ class KSCHelper():
             except PermissionError as e:
                 logging.error(e)
                 return False
-        subprocess.call(["pwd"])
-        logging.error("Trusted SSL Certificate is not defined")
-        return False
+        else:
+            logging.error("Trusted SSL Certificate is not defined")
+            return False
 
     def configure(self):
         """Refresh configuration data"""
