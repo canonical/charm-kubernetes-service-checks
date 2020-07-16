@@ -6,7 +6,7 @@ endif
 
 PROJECTPATH=$(dir $(realpath $(MAKEFILE_LIST)))
 METADATA_FILE="metadata.yaml"
-CHARM_NAME=$(shell cat ${PROJECTPATH}/${METADATA_FILE} | grep -E '^name:' | awk '{print $2}')
+CHARM_NAME=$(shell cat ${PROJECTPATH}/${METADATA_FILE} | grep -E '^name:' | awk '{print $$2}')
 
 help:
 	@echo "This project supports the following targets"
@@ -50,7 +50,7 @@ build:
 	@cp -r ./* ${CHARM_BUILD_DIR}/${CHARM_NAME}
 	@echo "Installing/updating env from requirements.txt"
 	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}/env/
-	@pip3 install --target=${CHARM_BUILD_DIR}/${CHARM_NAME}/env -r requirements.txt --upgrade
+	@if [ -f requirements.txt ] ; then @pip3 install --target=${CHARM_BUILD_DIR}/${CHARM_NAME}/env -r requirements.txt --upgrade ; fi
 
 release: clean submodules build
 	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"

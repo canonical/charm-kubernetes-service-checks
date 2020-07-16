@@ -57,12 +57,14 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             self.on_nrpe_external_master_relation_departed
         )
         # -- initialize states --
-        self.state.set_default(installed=False)
-        self.state.set_default(configured=False)
-        self.state.set_default(started=False)
-        self.state.set_default(kube_control={})
-        self.state.set_default(kube_api_endpoint={})
-        self.state.set_default(nrpe_configured=False)
+        self.state.set_default(
+            installed=False,
+            configured=False,
+            started=False,
+            kube_control={},
+            kube_api_endpoint={},
+            nrpe_configured=False,
+        )
         self.helper = KSCHelper(self.model.config, self.state)
 
     def on_install(self, event):
@@ -84,19 +86,19 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         # check that relations are configured with expected data
 
         if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
-            logging.warning("kubernetes-api-endpoint relation missing or misconfigured")
+            logging.warning("kube-api-endpoint relation missing or misconfigured")
             self.unit.status = BlockedStatus("missing kube-api-endpoint relation")
             return
         if not self.helper.kubernetes_client_token:
-            logging.warning("kubernetes-control relation missing or misconfigured")
+            logging.warning("kube-control relation missing or misconfigured")
             self.unit.status = BlockedStatus("missing kube-control relation")
             return
         if not self.state.nrpe_configured:
-            logging.warning("nrpe-external-master relation missing")
+            logging.warning("nrpe-external-master relation missing or misconfigured")
             self.unit.status = BlockedStatus("missing nrpe-external-master relation")
             return
 
-        # check specific config values if necessary
+            # check specific config values if necessary
         # Set up TLS Certificate
         if self.helper.use_tls_cert:
             logging.info("Updating tls certificates")
@@ -108,7 +110,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         else:
             logging.warn("No trusted_ssl_ca provided, SSL Host Authentication disabled")
 
-        # configure checks
+        # configure nrpe checks
         logging.info("Configuring Kubernetes Service Checks")
         self.helper.configure()
         self.state.configured = True
@@ -163,7 +165,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         provided hostname and port to KSCHelper.
         """
         self.unit.status = MaintenanceStatus("Updating K8S Endpoint")
-        self.state.kube_api_endpoint.update(event.relation.data[event.unit])
+        self.state.kube_api_endpoint.update(event.relation.data.get(event.unit, {}))
         self.check_charm_status()
 
     def on_kube_api_endpoint_relation_departed(self, event):
@@ -173,7 +175,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
 
     def on_kube_control_relation_changed(self, event):
         self.unit.status = MaintenanceStatus("Updating K8S Credentials")
-        self.state.kube_control.update(event.relation.data[event.unit])
+        self.state.kube_control.update(event.relation.data.get(event.unit, {}))
         self.check_charm_status()
 
     def on_kube_control_relation_departed(self, event):
@@ -194,7 +196,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.state.nrpe_configured = False
         self.check_charm_status()
 
-
 if __name__ == "__main__":
     from ops.main import main
     main(Kubernetes_Service_ChecksCharm)
+

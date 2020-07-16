@@ -1,5 +1,6 @@
 import os
 import unittest
+import subprocess
 import yaml
 import mock
 import tempfile
@@ -15,6 +16,11 @@ class TestLibKSCHelper(unittest.TestCase):
         # Load default config
         with open("./config.yaml") as default_config:
             cls.config = yaml.safe_load(default_config)
+
+        # set defaults to the config object
+        for key in cls.config["options"]:
+            if "default" in cls.config["options"][key]:
+                cls.config[key] = cls.config["options"][key]["default"]
 
         # Create test state object
         class FakeStateObject(object):
@@ -110,27 +116,26 @@ class TestLibKSCHelper(unittest.TestCase):
     def test_render_checks(self):
         pass
 
-    def test_install_kubectl(self):
-        pass
+    @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")
+    def test_install_kubectl(self, mock_snap_subprocess):
+        self.assertTrue(self.helper.install_kubectl())
+        channel = self.config.get("channel")
+        mock_snap_subprocess.assert_called_with(["snap",
+                                                 "install",
+                                                 "--classic",
+                                                 "--channel={}".format(channel),
+                                                 "kubectl"], env=os.environ)
 
-#        mock_snap_subprocess.assert_called_with(["snap",
-#                                                 "install",
-#                                                 "--classic",
-#                                                 "--channel={}".format(channel),
-#                                                 "kubectl"], env=os.environ)
 
-#    @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")
-#    def test_install_snap_failure(self, mock_snap_subprocess):
-#        """Test response to a failed install event."""
-#        error = subprocess.CalledProcessError("cmd", "Install failed")
-#        error.returncode = 1
-#        mock_snap_subprocess.return_value = 1
-#        mock_snap_subprocess.side_effect = error
+    @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")
+    def test_install_snap_failure(self, mock_snap_subprocess):
+        """Test response to a failed install event."""
+        error = subprocess.CalledProcessError("cmd", "Install failed")
+        error.returncode = 1
+        mock_snap_subprocess.return_value = 1
+        mock_snap_subprocess.side_effect = error
+        self.assertFalse(self.helper.install_kubectl())
 
-#        self.harness.begin()
-#        self.harness.charm.on.install.emit()
-#        self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-#        self.assertEqual(self.harness.charm.unit.status.message, "kubectl failed to install")
 
 if __name__ == "__main__":
     unittest.main()

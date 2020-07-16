@@ -67,13 +67,28 @@ return 200 - 'ok' if the api is healthy, otherwise 500.
 
 
 Other Checks
-============
+------------
+
 **Certificate Expiration:** The *check_http* plugin is shipped with nrpe, and contains a built in cert expiration check. The warning and crit 
 thesholds are configurable:
 
     juju config kubernetes-service-checks tls_warn_days=90
     juju config kubernetes-service-checks tls_crit_days=30
 
+Testing
+-------
+
+Juju should be installed and bootstrapped on the system to run functional tests.
+
+
+```
+    export MODEL_SETTINGS=<semicolon-separated list of "juju model-config" settings>
+    make test
+```
+
+NOTE: If you are behind a proxy, be sure to export a MODEL_SETTINGS variable as
+described above. Note that you will need to use the juju-http-proxy, juju-https-proxy, juju-no-proxy 
+and similar settings.
 
 Contact
 -------

@@ -1,3 +1,5 @@
 mock
 pyyaml
 coverage
+six
+urllib3

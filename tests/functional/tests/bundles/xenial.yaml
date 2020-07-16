@@ -84,7 +84,7 @@ relations:
       - kubernetes-worker:container-runtime
     - - containerd:containerd
       - kubernetes-master:container-runtime
-#    - - kubernetes-service-checks:kube-control
-#      - kubernetes-master:kube-control
-#    - - kubernetes-service-checks:kube-api-endpoint
-#      - kubernetes-master:kube-api-endpoint
+    - - kubernetes-service-checks:kube-control
+      - kubernetes-master:kube-control
+    - - kubernetes-service-checks:kube-api-endpoint
+      - kubernetes-master:kube-api-endpoint

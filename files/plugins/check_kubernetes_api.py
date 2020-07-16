@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import argparse
 import urllib3
 import sys
@@ -106,7 +107,7 @@ Authorization: Bearer $TOKEN
 Accept: application/json
 Connection: close
 
-GET /api/va/nodes HHTP/1.1
+GET /api/va/nodes HTTP/1.1
 Authorization: Bearer $TOKEN
 Accept: application/json
 Connection: close

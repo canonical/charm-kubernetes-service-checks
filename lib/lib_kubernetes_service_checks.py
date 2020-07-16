@@ -26,17 +26,19 @@ class KSCHelper():
 
     @property
     def kubernetes_client_token(self):
-        token = None
-        data = eval(self.state.kube_control.get("creds", "{}"))
-        for _, creds in data.items():
+        try:
+            data = eval(self.state.kube_control.get("creds", "{}"))
+        except:
+            data = {}
+        for creds in data.values():
             token = creds.get("client_token", None)
-        return token
+            if token:
+                return token
+        return None
 
     @property
     def use_tls_cert(self):
-        if not self._ssl_certificate:
-            return False
-        return True
+        return bool(self._ssl_certificate)
 
     @property
     def _ssl_certificate(self):
@@ -60,6 +62,8 @@ class KSCHelper():
         if self._ssl_certificate:
             try:
                 with open(self.ssl_cert_path, "w") as f:
+                    # TODO
+                    # cert_content = base64.b64decode(self._ssl_certificate).decode()
                     f.write(self._ssl_certificate)
                 subprocess.call(['/usr/sbin/update-ca-certificates'])
                 return True
@@ -103,8 +107,8 @@ class KSCHelper():
             # TODO: Add -C if cert check required.
 
             nrpe.add_check(
-                shortname="kubernetes_api",
-                description="Check Kubernetes API ()".format(check),
+                shortname="k8s_api_{}".format(check),
+                description="Check Kubernetes API ({})".format(check),
                 check_cmd=check_command,
             )
 
@@ -117,6 +121,12 @@ class KSCHelper():
             self.config.get("tls_warn_days"),
             self.config.get("tls_crit_days")
         ).strip()
+        nrpe.add_check(
+            shortname="k8s_api_cert_expiration",
+            description="Check Kubernetes API ({})".format(check),
+            check_cmd=check_command,
+        )
+        nrpe.write()
 
     def install_kubectl(self):
         """ Attempt to install kubectl
@@ -127,7 +137,7 @@ class KSCHelper():
         snap.SNAP_NO_LOCK_RETRY_DELAY = 0.5
         snap.SNAP_NO_LOCK_RETRY_COUNT = 3
         try:
-            channel = self.config['channel']
+            channel = self.config.get('channel')
             snap.snap_install("kubectl",
                               "--classic",
                               "--channel={}".format(channel)
