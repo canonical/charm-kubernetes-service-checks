@@ -16,7 +16,7 @@ from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 
-class Kubernetes_Service_ChecksCharm(CharmBase):  # noqa:N801
+class KubernetesServiceChecksCharm(CharmBase):
     """Class representing this Operator charm."""
 
     state = StoredState()
@@ -65,22 +65,26 @@ class Kubernetes_Service_ChecksCharm(CharmBase):  # noqa:N801
 
     def on_install(self, event):
         """Handle install state."""
-        self.unit.status = MaintenanceStatus("Installing charm software")
         self.unit.status = MaintenanceStatus("Install complete")
         logging.info("Install of software complete")
         self.state.installed = True
 
     def on_upgrade_charm(self, event):
         """Handle upgrade and resource updates."""
-        # Re-install for new snaps
         logging.info("Reinstalling for upgrade-charm hook")
         self.on_install(event)
         self.check_charm_status()
 
     def check_charm_status(self):
-        """Check that required data is available from relations."""
-        # check that relations are configured with expected data
+        """
+        Check that required data is available from relations.
 
+        - Check kube-api-endpoint relation and data available
+        - Check kube-control relation and data available
+        - Check nrpe-external-master is configured
+        - Check any required config options
+        - Finally, configure the charms checks and set flags
+        """
         if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
             logging.warning("kube-api-endpoint relation missing or misconfigured")
             self.unit.status = BlockedStatus("missing kube-api-endpoint relation")
@@ -130,7 +134,6 @@ class Kubernetes_Service_ChecksCharm(CharmBase):  # noqa:N801
             logging.warning("Start called before configuration complete, deferring event: {}".format(event.handle))
             event.defer()
             return
-        self.unit.status = MaintenanceStatus("Starting charm software")
         self.unit.status = ActiveStatus("Unit is ready")
         self.state.started = True
         logging.info("Started")
@@ -190,4 +193,4 @@ class Kubernetes_Service_ChecksCharm(CharmBase):  # noqa:N801
 
 
 if __name__ == "__main__":
-    main(Kubernetes_Service_ChecksCharm)
+    main(KubernetesServiceChecksCharm)

@@ -21,9 +21,7 @@ class TestKSCPlugins(unittest.TestCase):
             mock_sys_exit.assert_called_with(code)
 
     @mock.patch("check_kubernetes_api.urllib3.PoolManager")
-    @mock.patch("check_kubernetes_api.os.path.exists")
     def test_kubernetes_health_ssl(self,
-                                   mock_os_path_exists,
                                    mock_http_pool_manager):
         """Test the check k8s health function called with expected ssl params."""
         host_address = "https://1.1.1.1:1111"
@@ -41,7 +39,6 @@ class TestKSCPlugins(unittest.TestCase):
         mock_http_pool_manager.assert_called_with(cert_reqs='CERT_NONE', assert_hostname=False)
 
         disable_ssl = False
-        mock_os_path_exists.return_value = True
         check_kubernetes_api.check_kubernetes_health(
             host_address,
             token,
@@ -50,16 +47,13 @@ class TestKSCPlugins(unittest.TestCase):
         mock_http_pool_manager.assert_called_with()
 
     @mock.patch("check_kubernetes_api.urllib3.PoolManager")
-    @mock.patch("check_kubernetes_api.os.path.exists")
     def test_kubernetes_health_status(self,
-                                      mock_os_path_exists,
                                       mock_http_pool_manager):
         """Test kubernetes health function."""
         host_address = "https://1.1.1.1:1111"
         token = "0123456789abcdef"
         ssl_ca = "test/cert/path"
 
-        mock_os_path_exists.return_value = True
         mock_http_pool_manager.return_value.request.return_value.status = 200
         mock_http_pool_manager.return_value.request.return_value.data = b"ok"
 

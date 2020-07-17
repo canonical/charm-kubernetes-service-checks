@@ -6,9 +6,10 @@ import unittest
 
 import mock
 import yaml
+# include ./lib in the charm's PATH
 import setuppath  # noqa:F401
 
-from charm import Kubernetes_Service_ChecksCharm  # noqa:I100
+from charm import KubernetesServiceChecksCharm  # noqa:I100
 import ops.main
 from ops.testing import Harness
 
@@ -24,7 +25,7 @@ TEST_KUBE_API_ENDPOINT_RELATION_DATA = {"hostname": "1.1.1.1",
                                         "port": "1111"}
 
 
-class TestKubernetes_Service_ChecksCharm(unittest.TestCase):  # noqa:N801
+class TestKubernetesServiceChecksCharm(unittest.TestCase):
     """Test Kubernetes Service Checks Charm Code."""
 
     @classmethod
@@ -64,7 +65,7 @@ class TestKubernetes_Service_ChecksCharm(unittest.TestCase):  # noqa:N801
 
     def setUp(self):
         """Prepare tests."""
-        self.harness = Harness(Kubernetes_Service_ChecksCharm)
+        self.harness = Harness(KubernetesServiceChecksCharm)
         # Mock config_get to return default config
         with open(ops.main._get_charm_dir() / Path("config.yaml"), "r") as config_file:
             config = yaml.safe_load(config_file)
