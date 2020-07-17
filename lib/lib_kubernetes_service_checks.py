@@ -1,5 +1,6 @@
 """Kubernetes Service Checks Helper Library."""
 import base64
+import json
 import logging
 import os
 import subprocess
@@ -34,8 +35,8 @@ class KSCHelper():
     def kubernetes_client_token(self):
         """Get kubernetes client token."""
         try:
-            data = eval(self.state.kube_control.get("creds", "{}"))
-        except SyntaxError:
+            data = json.loads(self.state.kube_control.get("creds", "{}"))
+        except json.decoder.JSONDecodeError:
             data = {}
         for creds in data.values():
             token = creds.get("client_token", None)
