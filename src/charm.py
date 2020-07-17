@@ -1,19 +1,19 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
-# Copyright © 2020 Llama Charmers  llama-charmers@lists.ubuntu.com
+# Copyright © 2020 Bootstack Charmers  bootstack-charmers@lists.canonical.com
 
 """Operator Charm main library."""
 # Load modules from lib directory
 import logging
 
-from lib_kubernetes_service_checks import KSCHelper
+import setuppath  # noqa:F401
+
+from lib_kubernetes_service_checks import KSCHelper  # noqa:I100
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
-
-import setuppath  # noqa:F401
 
 
 class Kubernetes_Service_ChecksCharm(CharmBase):  # noqa:N801

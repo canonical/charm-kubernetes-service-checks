@@ -1,18 +1,21 @@
+"""Tests for Kubernetes Service Checks Helper."""
 import os
-import unittest
 import subprocess
-import yaml
-import mock
-import tempfile
-
 from subprocess import CalledProcessError
+import tempfile
+import unittest
 
 from lib import lib_kubernetes_service_checks
+import mock
+import yaml
+
 
 class TestLibKSCHelper(unittest.TestCase):
+    """Unittest class for Kubernetes Service Checks Helper."""
+
     @classmethod
     def setUpClass(cls):
-        """Setup Class Fixture"""
+        """Prepare Class Fixture."""
         # Load default config
         with open("./config.yaml") as default_config:
             cls.config = yaml.safe_load(default_config)
@@ -68,7 +71,7 @@ class TestLibKSCHelper(unittest.TestCase):
         cls.tmpdir.cleanup()
 
     def setUp(self):
-        """Setup test fixture"""
+        """Prepare test fixture."""
         self.helper = lib_kubernetes_service_checks.KSCHelper(self.config,
                                                               self.state)
 
@@ -80,6 +83,7 @@ class TestLibKSCHelper(unittest.TestCase):
             pass
 
     def test_kube_api_endpoint_properties(self):
+        """Test that hostname and port properties get passed through."""
         # kube_api_endpoint (relation) -> hostname & port
         self.assertEqual(self.helper.kubernetes_api_address, "1.1.1.1")
         self.assertEqual(self.helper.kubernetes_api_port, "1111")
@@ -89,6 +93,7 @@ class TestLibKSCHelper(unittest.TestCase):
         self.assertEqual(self.helper.kubernetes_api_port, None)
 
     def test_kube_control_endpoint_properties(self):
+        """Test KSCHelper client_token gets passed though."""
         # kube-control (relation) -> kube client token
         self.assertEqual(self.helper.kubernetes_client_token, "abcdef0123456789")
 
@@ -97,6 +102,7 @@ class TestLibKSCHelper(unittest.TestCase):
 
     @mock.patch("lib.lib_kubernetes_service_checks.subprocess.call")
     def test_update_tls_certificates(self, mock_subprocess):
+        """Test that SSL certificates get updated."""
         # returns False when no available trusted_ssl_cert
         self.assertFalse(self.helper.update_tls_certificates())
 
@@ -114,10 +120,13 @@ class TestLibKSCHelper(unittest.TestCase):
         self.assertFalse(self.helper.update_tls_certificates())
 
     def test_render_checks(self):
+        """Test that NPRE is called to add KSC checks."""
+        # TODO
         pass
 
     @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")
     def test_install_kubectl(self, mock_snap_subprocess):
+        """Test install kubectl snap helper function."""
         self.assertTrue(self.helper.install_kubectl())
         channel = self.config.get("channel")
         mock_snap_subprocess.assert_called_with(["snap",
@@ -125,7 +134,6 @@ class TestLibKSCHelper(unittest.TestCase):
                                                  "--classic",
                                                  "--channel={}".format(channel),
                                                  "kubectl"], env=os.environ)
-
 
     @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")
     def test_install_snap_failure(self, mock_snap_subprocess):

@@ -92,5 +92,5 @@ and similar settings.
 
 Contact
 -------
- - Author: **Llama Charmers** *<llama-charmers@lists.ubuntu.com>*
+ - Author: **Bootstack Charmers** *<bootstack-charmers@lists.canonical.com>*
  - Bug Tracker: [lp:charm-kubernetes-service-checks](https://launchpad.net/charm-kubernetes-service-checks)

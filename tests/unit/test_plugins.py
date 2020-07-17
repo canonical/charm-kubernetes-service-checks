@@ -1,29 +1,17 @@
+"""Unit tests for Kubernetes Service Checks NRPE Plugins."""
 import unittest
-import mock
 
 import check_kubernetes_api
+import mock
 
-class TestLibKSCHelper(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """Setup test class"""
-        pass
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up test class"""
-
-    def setUp(self):
-        """Setup test fixture"""
-        pass
-
-    def tearDown(self):
-        """Clean up test fixture"""
-        pass
+class TestKSCPlugins(unittest.TestCase):
+    """Test cases for Kubernetes Service Checks NRPE plugins."""
 
     @mock.patch("check_kubernetes_api.sys.exit")
     @mock.patch("check_kubernetes_api.print")
     def test_nagios_exit(self, mock_print, mock_sys_exit):
+        """Test the nagios_exit function."""
         msg = "Test message"
         for code, status in check_kubernetes_api.NAGIOS_STATUS.items():
             expected_output = "{}: {}".format(status, msg)
@@ -37,6 +25,7 @@ class TestLibKSCHelper(unittest.TestCase):
     def test_kubernetes_health_ssl(self,
                                    mock_os_path_exists,
                                    mock_http_pool_manager):
+        """Test the check k8s health function called with expected ssl params."""
         host_address = "https://1.1.1.1:1111"
         token = "0123456789abcdef"
         ssl_ca = None
@@ -71,6 +60,7 @@ class TestLibKSCHelper(unittest.TestCase):
     def test_kubernetes_health_status(self,
                                       mock_os_path_exists,
                                       mock_http_pool_manager):
+        """Test kubernetes health function."""
         host_address = "https://1.1.1.1:1111"
         token = "0123456789abcdef"
         ssl_ca = "test/cert/path"
