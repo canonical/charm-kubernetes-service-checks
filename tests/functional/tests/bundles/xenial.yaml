@@ -84,9 +84,7 @@ relations:
       - kubernetes-worker:container-runtime
     - - containerd:containerd
       - kubernetes-master:container-runtime
-# These relations my affect how kubernetes-master bootstraps if they
-# are added before the relations to the k8s worker
-#    - - kubernetes-service-checks:kube-control
-#      - kubernetes-master:kube-control
-#    - - kubernetes-service-checks:kube-api-endpoint
-#      - kubernetes-master:kube-api-endpoint
+    - - kubernetes-service-checks:kube-control
+      - kubernetes-master:kube-control
+    - - kubernetes-service-checks:kube-api-endpoint
+      - kubernetes-master:kube-api-endpoint

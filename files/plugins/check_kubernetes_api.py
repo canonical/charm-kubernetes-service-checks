@@ -1,8 +1,11 @@
 #!/usr/bin/python3
+"""NRPE Plugin for checking Kubernetes API."""
+
 import argparse
-import urllib3
-import sys
 import os
+import sys
+
+import urllib3
 
 NAGIOS_STATUS_OK = 0
 NAGIOS_STATUS_WARNING = 1
@@ -16,16 +19,24 @@ NAGIOS_STATUS = {
     NAGIOS_STATUS_UNKNOWN: "UNKNOWN",
 }
 
+
 def nagios_exit(status, message):
+    """Return the check status in Nagios preferred format.
+
+    :param status: Nagios Check status code (in [0, 1, 2, 3])
+    :param message: Message describing the status
+    :return: sys.exit("{status_string}: {message}")
+    """
     assert status in NAGIOS_STATUS, "Invalid Nagios status code"
     # prefix status name to message
     output = "{}: {}".format(NAGIOS_STATUS[status], message)
     print(output)  # nagios requires print to stdout, no stderr
     sys.exit(status)
 
+
 def check_kubernetes_health(k8s_address, client_token, ssl_ca):
-    """ Make a call to the <kubernetes-api>/healthz endpoint - the expected
-    return value is 'ok'
+    """Call <kubernetes-api>/healthz endpoint and check return value is 'ok'.
+
     :param k8s_address: Address to kube-api-server formatted 'https://<IP>:<PORT>'
     :param client_token: Token for authenticating with the kube-api
     :param ssl_ca: path to SSL CA certificate for authenticating the kube-api cert
@@ -100,7 +111,7 @@ if __name__ == "__main__":
                                     args.ssl_ca_path))
 
 """
-Future Checks
+TODO: Future Checks
 
 GET /api/v1/componentstatuses HTTP/1.1
 Authorization: Bearer $TOKEN
