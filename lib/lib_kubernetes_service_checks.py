@@ -109,8 +109,6 @@ class KSCHelper():
             nrpe.add_check(
                 shortname="k8s_api_{}".format(check),
                 description="Check Kubernetes API ({})".format(check),
-                context=self.config["nagios_context"],
-                servicegroups=self.config["nagios_servicegroups"],
                 check_cmd=check_command,
             )
 
@@ -126,8 +124,6 @@ class KSCHelper():
         nrpe.add_check(
             shortname="k8s_api_cert_expiration",
             description="Check Kubernetes API ({})".format(check),
-            context=self.config["nagios_context"],
-            servicegroups=self.config["nagios_servicegroups"],
             check_cmd=check_command,
         )
         nrpe.write()
