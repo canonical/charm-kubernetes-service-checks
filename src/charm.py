@@ -49,10 +49,6 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             self.on_nrpe_external_master_relation_joined
         )
         self.framework.observe(
-            self.on.nrpe_external_master_relation_changed,
-            self.on_nrpe_external_master_relation_changed
-        )
-        self.framework.observe(
             self.on.nrpe_external_master_relation_departed,
             self.on_nrpe_external_master_relation_departed
         )
@@ -169,6 +165,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.check_charm_status()
 
     def on_kube_api_endpoint_relation_departed(self, event):
+        self.state.configured = False
         for k in self.state.kube_api_endpoint.keys():
             self.state.kube_api_endpoint[k] = ""
         self.check_charm_status()
@@ -179,6 +176,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.check_charm_status()
 
     def on_kube_control_relation_departed(self, event):
+        self.state.configured = False
         for k in self.state.kube_control.keys():
             self.state.kube_control[k] = ""
         self.check_charm_status()
@@ -186,11 +184,6 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
     def on_nrpe_external_master_relation_joined(self, event):
         self.state.nrpe_configured = True
         self.check_charm_status()
-
-    def on_nrpe_external_master_relation_changed(self, event):
-        ##event.relation.data[event.unit]["nagios_hostname"] = self.model.config.get("nagios_servicegroups")
-        ##event.relation.data[event.unit]["nagios_host_context"] = self.model.config.get("nagios_context")
-        pass
 
     def on_nrpe_external_master_relation_departed(self, event):
         self.state.nrpe_configured = False
