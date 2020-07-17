@@ -2,7 +2,6 @@
 """NRPE Plugin for checking Kubernetes API."""
 
 import argparse
-import os
 import sys
 
 import urllib3
@@ -34,22 +33,22 @@ def nagios_exit(status, message):
     sys.exit(status)
 
 
-def check_kubernetes_health(k8s_address, client_token, ssl_ca):
+def check_kubernetes_health(k8s_address, client_token, disable_ssl):
     """Call <kubernetes-api>/healthz endpoint and check return value is 'ok'.
 
     :param k8s_address: Address to kube-api-server formatted 'https://<IP>:<PORT>'
     :param client_token: Token for authenticating with the kube-api
-    :param ssl_ca: path to SSL CA certificate for authenticating the kube-api cert
+    :param disable_ssl: Disables SSL Host Key verification
     """
     url = k8s_address + "/healthz"
-    if ssl_ca is None or not os.path.exists(ssl_ca):
+    if disable_ssl:
         # perform check without SSL verification
         http = urllib3.PoolManager(
             cert_reqs="CERT_NONE",
             assert_hostname=False
         )
     else:
-        http = urllib3.PoolManager(cert_reqs="CERT_REQUIRED", ca_file=ssl_ca)
+        http = urllib3.PoolManager()
 
     try:
         req = http.request(
@@ -96,8 +95,8 @@ if __name__ == "__main__":
         help="which check to run")
 
     parser.add_argument(
-        "-C", "--trusted-ca-cert", dest="ssl_ca_path", type=str, default=None,
-        help="String containing path to the trusted CA certificate"
+        "-d", "--disable-host-key-check", dest="disable_ssl", default=False,
+        action="store_true", help="Disables Host SSL Key Authentication"
     )
     args = parser.parse_args()
 
@@ -108,7 +107,7 @@ if __name__ == "__main__":
     k8s_url = "https://{}:{}".format(args.host, args.port)
     nagios_exit(*checks[args.check](k8s_url,
                                     args.client_token,
-                                    args.ssl_ca_path))
+                                    args.disable_ssl))
 
 """
 TODO: Future Checks

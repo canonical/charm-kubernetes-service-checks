@@ -1,4 +1,5 @@
 """Kubernetes Service Checks Helper Library."""
+import base64
 import logging
 import os
 import subprocess
@@ -73,11 +74,11 @@ class KSCHelper():
     def update_tls_certificates(self):
         """Write the trusted ssl certificate to the CERT_FILE."""
         if self._ssl_certificate:
+            cert_content = base64.b64decode(self._ssl_certificate).decode()
             try:
+                logging.debug('Writing ssl ca cert to {}'.format(self.ssl_cert_path))
                 with open(self.ssl_cert_path, "w") as f:
-                    # TODO
-                    # cert_content = base64.b64decode(self._ssl_certificate).decode()
-                    f.write(self._ssl_certificate)
+                    f.write(cert_content)
                 subprocess.call(['/usr/sbin/update-ca-certificates'])
                 return True
             except subprocess.CalledProcessError as e:
@@ -116,7 +117,8 @@ class KSCHelper():
                 self.kubernetes_client_token,
                 check
             ).strip()
-            # TODO: Add -C if cert check required.
+            if not self.use_tls_cert:
+                check_command += " -d"
 
             nrpe.add_check(
                 shortname="k8s_api_{}".format(check),

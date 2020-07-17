@@ -1,4 +1,5 @@
 """Tests for Kubernetes Service Checks Helper."""
+import base64
 import os
 import subprocess
 from subprocess import CalledProcessError
@@ -8,6 +9,28 @@ import unittest
 from lib import lib_kubernetes_service_checks
 import mock
 import yaml
+
+
+TEST_CERTIFICATE = """-----BEGIN CERTIFICATE-----
+MIIDOzCCAiOgAwIBAgIJAPoOXrIwH+miMA0GCSqGSIb3DQEBCwUAMBgxFjAUBgNV
+BAMMDTEwLjEzMi4yNTEuNjAwHhcNMjAwNzE3MTMzMzI0WhcNMzAwNzE1MTMzMzI0
+WjAYMRYwFAYDVQQDDA0xMC4xMzIuMjUxLjYwMIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEAqpYVlmT/eRBhCKHaqXjY6EAzvx5GZY0PhL/YGBl9uF8YQGEF
+F3k3Ec7pyJMIQblmWxdCPd1uNzHU8mwApiuPG9GtYOK+olqgslLsmOU9LTi6KJWX
+x956VxdefXDYvr0B6K/Hdgkb1x//XwvipSV1fZ1MCDIiP/hWKi4CmEq31sVpCBdp
+Uiz3qdCzsiGt0f4kbgIJSVtxhWlNJ5MaCOm7gXafkF8OIUTmWhmPp2gH7pfPzzl1
+glOX2Z41qwPuz7Jbcxx/z/yGjdPeJTQYoqJfpDpCrT2er5xyRf66HqKx9Ld/FiqM
+ZksRwmzF9WvqCBK8WoRmnvFxk1FZPGt6E5gotwIDAQABo4GHMIGEMB0GA1UdDgQW
+BBSUCCmRxb4tKD6w8jZ3hHs4ciFizDBIBgNVHSMEQTA/gBSUCCmRxb4tKD6w8jZ3
+hHs4ciFizKEcpBowGDEWMBQGA1UEAwwNMTAuMTMyLjI1MS42MIIJAPoOXrIwH+mi
+MAwGA1UdEwQFMAMBAf8wCwYDVR0PBAQDAgEGMA0GCSqGSIb3DQEBCwUAA4IBAQBv
+BYwILWI/4dGczqG0hcqt8tW04Oi+7y0HxzeI/oaUq/HKfvCz5a+WhpykMKRDJoaZ
+aejR2Oc7A0OUnenpvMeIiMcUIetM3Q1Gzx0aU+vqUNNaZlooSSbe3z1VK6bUsYDo
+qdKhs+mSyuEticK2SEWjT+ZWpV1rjSd5zRZ/UvC1ZhDNJGZotIIqryQWd3YfYl9l
+7JrdzUVCbxs4ywxNp9/I+MJEiBfMHQx8FWr1M2HvLDAm6NZLfM68y5FClzfGpopV
+0ARirz1AfbS6xUumyXHOH2qH527PUXFdfYGSn+juDG/dRTENYJ3OPAfWdj4ze1qQ
+n3ajLSYPvdyKaztdB1VL
+-----END CERTIFICATE-----"""
 
 
 class TestLibKSCHelper(unittest.TestCase):
@@ -107,11 +130,10 @@ class TestLibKSCHelper(unittest.TestCase):
         self.assertFalse(self.helper.update_tls_certificates())
 
         # returns True when subprocess successful
-        self.helper.config["trusted_ssl_ca"] = \
-            "BEGIN CERTIFICATE\nCERT-DATA\nEND CERTIFICATE"
+        self.helper.config["trusted_ssl_ca"] = base64.b64encode(str.encode(TEST_CERTIFICATE))
         self.assertTrue(self.helper.update_tls_certificates())
         with open(self.cert_path, "r") as f:
-            self.assertEqual(f.read(), self.helper.config["trusted_ssl_ca"])
+            self.assertEqual(f.read(), TEST_CERTIFICATE)
         mock_subprocess.assert_called_once_with(['/usr/sbin/update-ca-certificates'])
         mock_subprocess.reset_mock()
 

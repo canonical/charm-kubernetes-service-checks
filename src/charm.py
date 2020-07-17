@@ -75,6 +75,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):  # noqa:N801
         # Re-install for new snaps
         logging.info("Reinstalling for upgrade-charm hook")
         self.on_install(event)
+        self.check_charm_status()
 
     def check_charm_status(self):
         """Check that required data is available from relations."""
