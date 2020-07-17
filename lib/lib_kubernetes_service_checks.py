@@ -1,34 +1,40 @@
+"""Kubernetes Service Checks Helper Library."""
 import logging
-import ssl
 import os
 import subprocess
 
-from charmhelpers.fetch import snap
-from charmhelpers.core import hookenv, host
 from charmhelpers.contrib.charmsupport.nrpe import NRPE
+from charmhelpers.core import hookenv, host
+from charmhelpers.fetch import snap
 
 CERT_FILE = "/usr/local/share/ca-certificates/kubernetes-service-checks.crt"
 NAGIOS_PLUGINS_DIR = "/usr/local/lib/nagios/plugins/"
 
+
 class KSCHelper():
+    """Kubernetes Service Checks Helper Class."""
+
     def __init__(self, config, state):
-        """Initialize the Helper with the config and state"""
+        """Initialize the Helper with the charm config and state."""
         self.config = config
         self.state = state
 
     @property
     def kubernetes_api_address(self):
+        """Get kubernetes api hostname."""
         return self.state.kube_api_endpoint.get("hostname", None)
 
     @property
     def kubernetes_api_port(self):
+        """Get kubernetes api port."""
         return self.state.kube_api_endpoint.get("port", None)
 
     @property
     def kubernetes_client_token(self):
+        """Get kubernetes client token."""
         try:
             data = eval(self.state.kube_control.get("creds", "{}"))
-        except:
+        except SyntaxError:
             data = {}
         for creds in data.values():
             token = creds.get("client_token", None)
@@ -38,6 +44,7 @@ class KSCHelper():
 
     @property
     def use_tls_cert(self):
+        """Check if SSL cert is provided for use."""
         return bool(self._ssl_certificate)
 
     @property
@@ -51,14 +58,20 @@ class KSCHelper():
 
     @property
     def ssl_cert_path(self):
+        """Get cert file path."""
         return CERT_FILE
 
     @property
     def plugins_dir(self):
+        """Get nagios plugins directory."""
         return NAGIOS_PLUGINS_DIR
 
+    def restart_nrpe_service(self):
+        """Restart nagios-nrpe-server service."""
+        host.service_restart('nagios-nrpe-server')
+
     def update_tls_certificates(self):
-        """Write the trusted ssl certificate to the CERT_FILE"""
+        """Write the trusted ssl certificate to the CERT_FILE."""
         if self._ssl_certificate:
             try:
                 with open(self.ssl_cert_path, "w") as f:
@@ -78,18 +91,17 @@ class KSCHelper():
             return False
 
     def configure(self):
-        """Refresh configuration data"""
+        """Refresh configuration data."""
         self.update_plugins()
         self.render_checks()
 
     def update_plugins(self):
-        """Rsync the Kubernetes Service Checks charm provided plugins to the
-        plugin directory.
-        """
+        """Rsync plugins to the plugin directory."""
         charm_plugin_dir = os.path.join(hookenv.charm_dir(), "files", "plugins/")
         host.rsync(charm_plugin_dir, self.plugins_dir, options=["--executability"])
 
     def render_checks(self):
+        """Render nrpe checks."""
         nrpe = NRPE()
         if not os.path.exists(self.plugins_dir):
             os.makedirs(self.plugins_dir)
@@ -129,7 +141,7 @@ class KSCHelper():
         nrpe.write()
 
     def install_kubectl(self):
-        """ Attempt to install kubectl
+        """Attempt to install kubectl.
 
         :returns: bool, indicating whether or not successful
         """

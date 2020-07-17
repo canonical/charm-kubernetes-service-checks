@@ -7,16 +7,16 @@
 # Load modules from lib directory
 import logging
 
-import setuppath  # noqa:F401
 from lib_kubernetes_service_checks import KSCHelper
-
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
-from ops.model import ActiveStatus, MaintenanceStatus, BlockedStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
+
+import setuppath  # noqa:F401
 
 
-class Kubernetes_Service_ChecksCharm(CharmBase):
+class Kubernetes_Service_ChecksCharm(CharmBase):  # noqa:N801
     """Class representing this Operator charm."""
 
     state = StoredState()
@@ -65,7 +65,6 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
 
     def on_install(self, event):
         """Handle install state."""
-        # TOFIX: installing kubectl isnt necessary
         self.unit.status = MaintenanceStatus("Installing charm software")
         self.unit.status = MaintenanceStatus("Install complete")
         logging.info("Install of software complete")
@@ -78,7 +77,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
         self.on_install(event)
 
     def check_charm_status(self):
-        """Check that required data is available from relations and set charm's state"""
+        """Check that required data is available from relations."""
         # check that relations are configured with expected data
 
         if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
@@ -94,7 +93,7 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             self.unit.status = BlockedStatus("missing nrpe-external-master relation")
             return
 
-            # check specific config values if necessary
+        # Check specific required config values
         # Set up TLS Certificate
         if self.helper.use_tls_cert:
             logging.info("Updating tls certificates")
@@ -103,12 +102,16 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             else:
                 logging.error("Failed to update TLS Certificates")
                 self.unit.status = BlockedStatus("update-ca-certificates error. check logs")
+                return
         else:
             logging.warn("No trusted_ssl_ca provided, SSL Host Authentication disabled")
 
         # configure nrpe checks
         logging.info("Configuring Kubernetes Service Checks")
         self.helper.configure()
+        if not self.state.configured:
+            logging.info('Reloading nagios-nrpe-server')
+            self.helper.restart_nrpe_service()
         self.state.configured = True
         self.unit.status = ActiveStatus("Unit is ready")
 
@@ -127,15 +130,6 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             event.defer()
             return
         self.unit.status = MaintenanceStatus("Starting charm software")
-        # Start software
-        # TODO: Do any host services need to be started?
-
-        ## hookenv.log('Reloading nagios-nrpe-server')
-        ## host.service_restart('nagios-nrpe-server')
-        ## hookenv.status_set('active', 'Unit is ready')
-        ## set_flag('openstack-service-checks.started')
-
-        # host.service_start(self.helper.service_name)
         self.unit.status = ActiveStatus("Unit is ready")
         self.state.started = True
         logging.info("Started")
@@ -157,39 +151,42 @@ class Kubernetes_Service_ChecksCharm(CharmBase):
             event.defer()
 
     def on_kube_api_endpoint_relation_changed(self, event):
-        """ Handle kube_api_endpoint relation change event by importing the
-        provided hostname and port to KSCHelper.
-        """
+        """Handle kube_api_endpoint relation changed."""
         self.unit.status = MaintenanceStatus("Updating K8S Endpoint")
         self.state.kube_api_endpoint.update(event.relation.data.get(event.unit, {}))
         self.check_charm_status()
 
     def on_kube_api_endpoint_relation_departed(self, event):
+        """Handle kube-api-endpoint relation departed."""
         self.state.configured = False
         for k in self.state.kube_api_endpoint.keys():
             self.state.kube_api_endpoint[k] = ""
         self.check_charm_status()
 
     def on_kube_control_relation_changed(self, event):
+        """Handle kube-control relation changed."""
         self.unit.status = MaintenanceStatus("Updating K8S Credentials")
         self.state.kube_control.update(event.relation.data.get(event.unit, {}))
         self.check_charm_status()
 
     def on_kube_control_relation_departed(self, event):
+        """Handle kube-control relation departed."""
         self.state.configured = False
         for k in self.state.kube_control.keys():
             self.state.kube_control[k] = ""
         self.check_charm_status()
 
     def on_nrpe_external_master_relation_joined(self, event):
+        """Handle nrpe-external-master relation joined."""
         self.state.nrpe_configured = True
         self.check_charm_status()
 
     def on_nrpe_external_master_relation_departed(self, event):
+        """Handle nrpe-external-master relation departed."""
+        self.state.configured = False
         self.state.nrpe_configured = False
         self.check_charm_status()
 
-if __name__ == "__main__":
-    from ops.main import main
-    main(Kubernetes_Service_ChecksCharm)
 
+if __name__ == "__main__":
+    main(Kubernetes_Service_ChecksCharm)
