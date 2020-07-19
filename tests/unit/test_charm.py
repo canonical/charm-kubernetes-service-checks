@@ -6,6 +6,7 @@ import unittest
 
 import mock
 import yaml
+
 # include ./lib in the charm's PATH
 import setuppath  # noqa:F401
 
@@ -13,16 +14,15 @@ from charm import KubernetesServiceChecksCharm  # noqa:I100
 import ops.main
 from ops.testing import Harness
 
-TEST_KUBE_CONTOL_RELATION_DATA = {"creds":
-                                   """{"system:node:juju-62684f-0":
+TEST_KUBE_CONTOL_RELATION_DATA = {
+    "creds": """{"system:node:juju-62684f-0":
                                       {"client_token": "DECAFBADBEEF",
                                        "kubelet_token": "ABCDEF012345",
                                        "proxy_token": "BADC0FFEEDAD",
                                        "scope": "kubernetes-worker/0"}
                                    }"""  # noqa:E127
-                                  }
-TEST_KUBE_API_ENDPOINT_RELATION_DATA = {"hostname": "1.1.1.1",
-                                        "port": "1111"}
+}
+TEST_KUBE_API_ENDPOINT_RELATION_DATA = {"hostname": "1.1.1.1", "port": "1111"}
 
 
 class TestKubernetesServiceChecksCharm(unittest.TestCase):
@@ -128,7 +128,7 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
 
     def test_on_kube_api_endpoint_relation_changed(self):
         """Check kube-api-endpoint relation changed handling."""
-        relation_id = self.harness.add_relation('kube-api-endpoint', 'kubernetes-master')
+        relation_id = self.harness.add_relation("kube-api-endpoint", "kubernetes-master")
         remote_unit = "kubernetes-master/0"
         self.harness.begin()
         self.harness.charm.check_charm_status = mock.MagicMock()
@@ -141,7 +141,7 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
 
     def test_on_kube_control_relation_changed(self):
         """Check kube-control relation changed handling."""
-        relation_id = self.harness.add_relation('kube-control', 'kubernetes-master')
+        relation_id = self.harness.add_relation("kube-control", "kubernetes-master")
         remote_unit = "kubernetes-master/0"
         self.harness.begin()
         self.harness.charm.check_charm_status = mock.MagicMock()
@@ -153,7 +153,7 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
 
     def test_nrpe_external_master_relation_joined(self):
         """Check that nrpe.configure is True after nrpe relation joined."""
-        relation_id = self.harness.add_relation('nrpe-external-master', 'nrpe')
+        relation_id = self.harness.add_relation("nrpe-external-master", "nrpe")
         remote_unit = "nrpe/0"
         self.harness.begin()
         self.assertFalse(self.harness.charm.state.nrpe_configured)

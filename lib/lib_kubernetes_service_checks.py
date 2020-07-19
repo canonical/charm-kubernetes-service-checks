@@ -13,7 +13,7 @@ CERT_FILE = "/usr/local/share/ca-certificates/kubernetes-service-checks.crt"
 NAGIOS_PLUGINS_DIR = "/usr/local/lib/nagios/plugins/"
 
 
-class KSCHelper():
+class KSCHelper:
     """Kubernetes Service Checks Helper Class."""
 
     def __init__(self, config, state):
@@ -70,17 +70,17 @@ class KSCHelper():
 
     def restart_nrpe_service(self):
         """Restart nagios-nrpe-server service."""
-        host.service_restart('nagios-nrpe-server')
+        host.service_restart("nagios-nrpe-server")
 
     def update_tls_certificates(self):
         """Write the trusted ssl certificate to the CERT_FILE."""
         if self._ssl_certificate:
             cert_content = base64.b64decode(self._ssl_certificate).decode()
             try:
-                logging.debug('Writing ssl ca cert to {}'.format(self.ssl_cert_path))
+                logging.debug("Writing ssl ca cert to {}".format(self.ssl_cert_path))
                 with open(self.ssl_cert_path, "w") as f:
                     f.write(cert_content)
-                subprocess.call(['/usr/sbin/update-ca-certificates'])
+                subprocess.call(["/usr/sbin/update-ca-certificates"])
                 return True
             except subprocess.CalledProcessError as e:
                 logging.error(e)
@@ -116,7 +116,7 @@ class KSCHelper():
                 self.kubernetes_api_address,
                 self.kubernetes_api_port,
                 self.kubernetes_client_token,
-                check
+                check,
             ).strip()
             if not self.use_tls_cert:
                 check_command += " -d"
@@ -134,7 +134,7 @@ class KSCHelper():
             self.kubernetes_api_address,
             self.kubernetes_api_port,
             self.config.get("tls_warn_days"),
-            self.config.get("tls_crit_days")
+            self.config.get("tls_crit_days"),
         ).strip()
         nrpe.add_check(
             shortname="k8s_api_cert_expiration",
@@ -152,11 +152,8 @@ class KSCHelper():
         snap.SNAP_NO_LOCK_RETRY_DELAY = 0.5
         snap.SNAP_NO_LOCK_RETRY_COUNT = 3
         try:
-            channel = self.config.get('channel')
-            snap.snap_install("kubectl",
-                              "--classic",
-                              "--channel={}".format(channel)
-                              )
+            channel = self.config.get("channel")
+            snap.snap_install("kubectl", "--classic", "--channel={}".format(channel))
             return True
         except snap.CouldNotAcquireLockException:
             return False

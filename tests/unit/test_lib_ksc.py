@@ -50,8 +50,7 @@ class TestLibKSCHelper(unittest.TestCase):
 
         # Create test state object
         class FakeStateObject(object):
-            kube_api_endpoint = {"hostname": "1.1.1.1",
-                                 "port": "1111"}
+            kube_api_endpoint = {"hostname": "1.1.1.1", "port": "1111"}
             kube_control = {"creds": """{"kube-client": {"client_token": "abcdef0123456789"}}"""}
             installed = False
             configured = False
@@ -79,10 +78,7 @@ class TestLibKSCHelper(unittest.TestCase):
 
         # Setup a tmpdir
         cls.tmpdir = tempfile.TemporaryDirectory()
-        cls.cert_path = os.path.join(
-                cls.tmpdir.name,
-                "kubernetes-service-checks.crt"
-            )
+        cls.cert_path = os.path.join(cls.tmpdir.name, "kubernetes-service-checks.crt")
 
         lib_kubernetes_service_checks.CERT_FILE = cls.cert_path
         lib_kubernetes_service_checks.NAGIOS_PLUGINS_DIR = cls.tmpdir.name
@@ -95,8 +91,7 @@ class TestLibKSCHelper(unittest.TestCase):
 
     def setUp(self):
         """Prepare test fixture."""
-        self.helper = lib_kubernetes_service_checks.KSCHelper(self.config,
-                                                              self.state)
+        self.helper = lib_kubernetes_service_checks.KSCHelper(self.config, self.state)
 
     def tearDown(self):
         """Clean up test fixture."""
@@ -134,7 +129,7 @@ class TestLibKSCHelper(unittest.TestCase):
         self.assertTrue(self.helper.update_tls_certificates())
         with open(self.cert_path, "r") as f:
             self.assertEqual(f.read(), TEST_CERTIFICATE)
-        mock_subprocess.assert_called_once_with(['/usr/sbin/update-ca-certificates'])
+        mock_subprocess.assert_called_once_with(["/usr/sbin/update-ca-certificates"])
         mock_subprocess.reset_mock()
 
         # returns false when subprocess hits an exception
@@ -151,11 +146,9 @@ class TestLibKSCHelper(unittest.TestCase):
         """Test install kubectl snap helper function."""
         self.assertTrue(self.helper.install_kubectl())
         channel = self.config.get("channel")
-        mock_snap_subprocess.assert_called_with(["snap",
-                                                 "install",
-                                                 "--classic",
-                                                 "--channel={}".format(channel),
-                                                 "kubectl"], env=os.environ)
+        mock_snap_subprocess.assert_called_with(
+            ["snap", "install", "--classic", "--channel={}".format(channel), "kubectl"], env=os.environ
+        )
 
     @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")
     def test_install_snap_failure(self, mock_snap_subprocess):

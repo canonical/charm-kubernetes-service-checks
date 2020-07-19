@@ -29,28 +29,18 @@ class KubernetesServiceChecksCharm(CharmBase):
         self.framework.observe(self.on.start, self.on_start)
         self.framework.observe(self.on.config_changed, self.on_config_changed)
         self.framework.observe(
-            self.on.kube_api_endpoint_relation_changed,
-            self.on_kube_api_endpoint_relation_changed,
+            self.on.kube_api_endpoint_relation_changed, self.on_kube_api_endpoint_relation_changed,
+        )
+        self.framework.observe(self.on.kube_api_endpoint_relation_departed, self.on_kube_api_endpoint_relation_departed)
+        self.framework.observe(
+            self.on.kube_control_relation_changed, self.on_kube_control_relation_changed,
+        )
+        self.framework.observe(self.on.kube_control_relation_departed, self.on_kube_control_relation_departed)
+        self.framework.observe(
+            self.on.nrpe_external_master_relation_joined, self.on_nrpe_external_master_relation_joined
         )
         self.framework.observe(
-            self.on.kube_api_endpoint_relation_departed,
-            self.on_kube_api_endpoint_relation_departed
-        )
-        self.framework.observe(
-            self.on.kube_control_relation_changed,
-            self.on_kube_control_relation_changed,
-        )
-        self.framework.observe(
-            self.on.kube_control_relation_departed,
-            self.on_kube_control_relation_departed
-        )
-        self.framework.observe(
-            self.on.nrpe_external_master_relation_joined,
-            self.on_nrpe_external_master_relation_joined
-        )
-        self.framework.observe(
-            self.on.nrpe_external_master_relation_departed,
-            self.on_nrpe_external_master_relation_departed
+            self.on.nrpe_external_master_relation_departed, self.on_nrpe_external_master_relation_departed
         )
         # -- initialize states --
         self.state.set_default(
@@ -115,7 +105,7 @@ class KubernetesServiceChecksCharm(CharmBase):
         logging.info("Configuring Kubernetes Service Checks")
         self.helper.configure()
         if not self.state.configured:
-            logging.info('Reloading nagios-nrpe-server')
+            logging.info("Reloading nagios-nrpe-server")
             self.helper.restart_nrpe_service()
         self.state.configured = True
         self.unit.status = ActiveStatus("Unit is ready")
@@ -144,7 +134,7 @@ class KubernetesServiceChecksCharm(CharmBase):
         handle = str(event.handle)
 
         for event_path, _, _ in self.framework._storage.notices(None):
-            if event_path.startswith(handle.split('[')[0]):
+            if event_path.startswith(handle.split("[")[0]):
                 notice_count += 1
                 logging.debug("Found event: {} x {}".format(event_path, notice_count))
 
