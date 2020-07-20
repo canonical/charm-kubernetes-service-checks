@@ -103,9 +103,10 @@ class KubernetesServiceChecksCharm(CharmBase):
             logging.warning("No trusted_ssl_ca provided, SSL Host Authentication disabled")
 
         # configure nrpe checks
-        logging.info("Configuring Kubernetes Service Checks")
-        self.helper.configure()
         if not self.state.configured:
+            logging.info("Configuring Kubernetes Service Checks")
+            self.helper.configure()
+
             logging.info("Reloading nagios-nrpe-server")
             self.helper.restart_nrpe_service()
             self.state.configured = True
