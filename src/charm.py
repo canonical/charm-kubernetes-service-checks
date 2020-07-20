@@ -61,6 +61,7 @@ class KubernetesServiceChecksCharm(CharmBase):
 
     def on_upgrade_charm(self, event):
         """Handle upgrade and resource updates."""
+        self.state.configured = False
         logging.info("Reinstalling for upgrade-charm hook")
         self.on_install(event)
         self.check_charm_status()
@@ -107,11 +108,12 @@ class KubernetesServiceChecksCharm(CharmBase):
         if not self.state.configured:
             logging.info("Reloading nagios-nrpe-server")
             self.helper.restart_nrpe_service()
-        self.state.configured = True
+            self.state.configured = True
         self.unit.status = ActiveStatus("Unit is ready")
 
     def on_config_changed(self, event):
         """Handle config changed."""
+        self.state.configured = False
         if not self.state.installed:
             logging.warning("Config changed called before install complete, deferring event: {}.".format(event.handle))
             self._defer_once(event)
@@ -146,6 +148,7 @@ class KubernetesServiceChecksCharm(CharmBase):
 
     def on_kube_api_endpoint_relation_changed(self, event):
         """Handle kube_api_endpoint relation changed."""
+        self.state.configured = False
         self.unit.status = MaintenanceStatus("Updating K8S Endpoint")
         self.state.kube_api_endpoint.update(event.relation.data.get(event.unit, {}))
         self.check_charm_status()
@@ -159,6 +162,7 @@ class KubernetesServiceChecksCharm(CharmBase):
 
     def on_kube_control_relation_changed(self, event):
         """Handle kube-control relation changed."""
+        self.state.configured = False
         self.unit.status = MaintenanceStatus("Updating K8S Credentials")
         self.state.kube_control.update(event.relation.data.get(event.unit, {}))
         self.check_charm_status()
