@@ -99,7 +99,7 @@ class KubernetesServiceChecksCharm(CharmBase):
                 self.unit.status = BlockedStatus("update-ca-certificates error. check logs")
                 return
         else:
-            logging.warn("No trusted_ssl_ca provided, SSL Host Authentication disabled")
+            logging.warning("No trusted_ssl_ca provided, SSL Host Authentication disabled")
 
         # configure nrpe checks
         logging.info("Configuring Kubernetes Service Checks")
