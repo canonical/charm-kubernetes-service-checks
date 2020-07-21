@@ -89,21 +89,20 @@ class KubernetesServiceChecksCharm(CharmBase):
             self.unit.status = BlockedStatus("missing nrpe-external-master relation")
             return
 
-        # Check specific required config values
-        # Set up TLS Certificate
-        if self.helper.use_tls_cert:
-            logging.info("Updating tls certificates")
-            if self.helper.update_tls_certificates():
-                logging.info("TLS Certificates updated successfully")
-            else:
-                logging.error("Failed to update TLS Certificates")
-                self.unit.status = BlockedStatus("update-ca-certificates error. check logs")
-                return
-        else:
-            logging.warning("No trusted_ssl_ca provided, SSL Host Authentication disabled")
-
-        # configure nrpe checks
         if not self.state.configured:
+            # Check specific required config values
+            # Set up TLS Certificate
+            if self.helper.use_tls_cert:
+                logging.info("Updating tls certificates")
+                if self.helper.update_tls_certificates():
+                    logging.info("TLS Certificates updated successfully")
+                else:
+                    logging.error("Failed to update TLS Certificates")
+                    self.unit.status = BlockedStatus("update-ca-certificates error. check logs")
+                    return
+            else:
+                logging.warning("No trusted_ssl_ca provided, SSL Host Authentication disabled")
+
             logging.info("Configuring Kubernetes Service Checks")
             self.helper.configure()
 
