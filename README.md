@@ -1,44 +1,39 @@
 # kubernetes-service-checks Charm
 
-Overview
---------
+## Overview
 
 This charm provides Kubernetes Service checks for Nagios
 
-Quickstart
-----------
+## Quickstart
 
-    juju deploy cs:kubernetes-service-checks
-    juju add-relation kubernetes-service-checks nrpe
-    juju add-relation kubernetes-service-checks:kube-api-endpoint kubernetes-master
-    juju add-relation kuberentes-service-checks:kube-control kuberentes-master
-    
-
-
+```
+juju deploy cs:kubernetes-service-checks
+juju add-relation kubernetes-service-checks nrpe
+juju add-relation kubernetes-service-checks:kube-api-endpoint kubernetes-master
+juju add-relation kubernetes-service-checks:kube-control kubernetes-master
+```
 
 ### Relations
 
 * **kubernetes-master:kube-api-endpoint** - Provides KSC with the kubernetes-api *hostname* and *port*
+* **kubernetes-master:kube-control** - Provides KSC with a kubernetes-api *client-token* for authentication
+* **nrpe:nrpe-external-master** - Required for nagios; provides additional plugins
 
-* **kuberentes-master:kube-control** - Provides KSC with a kuberentes-api *client-token* for authentication
-
-* **nrpe:nrpe-external-master** - Required for nagios; provides additional plugins 
-
-
-**Note:** Future relations with kubernetes-master *may* be changed so that a 
+**Note:** Future relations with kubernetes-master *may* be changed so that a
 single relation can provide the K8S api hostname, port, client token and ssl ca
 cert.
 
 ### Config Options
 
-**trusted_ssl_ca** *(Optional)* Setting this option enables SSL host 
+**trusted_ssl_ca** *(Optional)* Setting this option enables SSL host
 certificate authentication in the api checks
-    
-    juju config kubernetes-service-checks trusted_ssl_ca="${KUBERNETES_API_CA}"
 
+```
+juju config kubernetes-service-checks trusted_ssl_ca="${KUBERNETES_API_CA}"
+```
 
-Service Checks
---------------
+## Service Checks
+
 The plugin *check_kubernetes_api.py* ships with this charm and contains an array of checks for the k8s api health.
 
 ```
@@ -62,35 +57,33 @@ optional arguments:
 
 ```
 
-**health** - This polls the kubernetes-api */healthz* endpoint. Posting a GET to this URL endpoint is expected to 
-return 200 - 'ok' if the api is healthy, otherwise 500.  
+**health** - This polls the kubernetes-api */healthz* endpoint. Posting a GET to this URL endpoint is expected to
+return 200 - 'ok' if the api is healthy, otherwise 500.
 
+## Other Checks
 
-Other Checks
-------------
-
-**Certificate Expiration:** The *check_http* plugin is shipped with nrpe, and contains a built in cert expiration check. The warning and crit 
+**Certificate Expiration:** The *check_http* plugin is shipped with nrpe, and contains a built in cert expiration check. The warning and crit
 thesholds are configurable:
 
-    juju config kubernetes-service-checks tls_warn_days=90
-    juju config kubernetes-service-checks tls_crit_days=30
+```
+juju config kubernetes-service-checks tls_warn_days=90
+juju config kubernetes-service-checks tls_crit_days=30
+```
 
-Testing
--------
+## Testing
 
 Juju should be installed and bootstrapped on the system to run functional tests.
 
-
 ```
-    export MODEL_SETTINGS=<semicolon-separated list of "juju model-config" settings>
-    make test
+export MODEL_SETTINGS=<semicolon-separated list of "juju model-config" settings>
+make test
 ```
 
 NOTE: If you are behind a proxy, be sure to export a MODEL_SETTINGS variable as
-described above. Note that you will need to use the juju-http-proxy, juju-https-proxy, juju-no-proxy 
+described above. Note that you will need to use the juju-http-proxy, juju-https-proxy, juju-no-proxy
 and similar settings.
 
-Contact
--------
- - Author: **Bootstack Charmers** *<bootstack-charmers@lists.canonical.com>*
- - Bug Tracker: [lp:charm-kubernetes-service-checks](https://launchpad.net/charm-kubernetes-service-checks)
+## Contact
+
+- Author: **Bootstack Charmers** *<bootstack-charmers@lists.canonical.com>*
+- Bug Tracker: [lp:charm-kubernetes-service-checks](https://launchpad.net/charm-kubernetes-service-checks)
