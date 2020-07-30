@@ -31,7 +31,9 @@ class TestKSCPlugins(unittest.TestCase):
         mock_http_pool_manager.return_value.data = b"ok"
 
         check_kubernetes_api.check_kubernetes_health(host_address, token, disable_ssl)
-        mock_http_pool_manager.assert_called_with(cert_reqs="CERT_NONE", assert_hostname=False)
+        mock_http_pool_manager.assert_called_with(
+            cert_reqs="CERT_NONE", assert_hostname=False
+        )
 
         disable_ssl = False
         check_kubernetes_api.check_kubernetes_health(host_address, token, disable_ssl)
@@ -48,18 +50,26 @@ class TestKSCPlugins(unittest.TestCase):
         mock_http_pool_manager.return_value.request.return_value.data = b"ok"
 
         # verify status OK
-        status, _ = check_kubernetes_api.check_kubernetes_health(host_address, token, ssl_ca)
+        status, _ = check_kubernetes_api.check_kubernetes_health(
+            host_address, token, ssl_ca
+        )
         self.assertEqual(status, check_kubernetes_api.NAGIOS_STATUS_OK)
         mock_http_pool_manager.return_value.request.assert_called_once_with(
-            "GET", "{}/healthz".format(host_address), headers={"Authorization": "Bearer {}".format(token)}
+            "GET",
+            "{}/healthz".format(host_address),
+            headers={"Authorization": "Bearer {}".format(token)},
         )
 
         mock_http_pool_manager.return_value.request.return_value.status = 500
         mock_http_pool_manager.return_value.request.return_value.data = b"ok"
-        status, _ = check_kubernetes_api.check_kubernetes_health(host_address, token, ssl_ca)
+        status, _ = check_kubernetes_api.check_kubernetes_health(
+            host_address, token, ssl_ca
+        )
         self.assertEqual(status, check_kubernetes_api.NAGIOS_STATUS_CRITICAL)
 
         mock_http_pool_manager.return_value.request.return_value.status = 200
         mock_http_pool_manager.return_value.request.return_value.data = b"not ok"
-        status, _ = check_kubernetes_api.check_kubernetes_health(host_address, token, ssl_ca)
+        status, _ = check_kubernetes_api.check_kubernetes_health(
+            host_address, token, ssl_ca
+        )
         self.assertEqual(status, check_kubernetes_api.NAGIOS_STATUS_WARNING)

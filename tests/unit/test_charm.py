@@ -128,12 +128,16 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
 
     def test_on_kube_api_endpoint_relation_changed(self):
         """Check kube-api-endpoint relation changed handling."""
-        relation_id = self.harness.add_relation("kube-api-endpoint", "kubernetes-master")
+        relation_id = self.harness.add_relation(
+            "kube-api-endpoint", "kubernetes-master"
+        )
         remote_unit = "kubernetes-master/0"
         self.harness.begin()
         self.harness.charm.check_charm_status = mock.MagicMock()
         self.harness.add_relation_unit(relation_id, remote_unit)
-        self.harness.update_relation_data(relation_id, remote_unit, TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+        self.harness.update_relation_data(
+            relation_id, remote_unit, TEST_KUBE_API_ENDPOINT_RELATION_DATA
+        )
 
         self.harness.charm.check_charm_status.assert_called_once()
         self.assertEqual(self.harness.charm.helper.kubernetes_api_address, "1.1.1.1")
@@ -146,7 +150,9 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
         self.harness.begin()
         self.harness.charm.check_charm_status = mock.MagicMock()
         self.harness.add_relation_unit(relation_id, remote_unit)
-        self.harness.update_relation_data(relation_id, remote_unit, TEST_KUBE_CONTOL_RELATION_DATA)
+        self.harness.update_relation_data(
+            relation_id, remote_unit, TEST_KUBE_CONTOL_RELATION_DATA
+        )
 
         self.harness.charm.check_charm_status.assert_called_once()
         assert self.harness.charm.helper.kubernetes_client_token == "DECAFBADBEEF"
@@ -183,36 +189,49 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
 
         self.assertFalse(self.harness.charm.state.configured)
         self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-        self.assertEqual(self.harness.charm.unit.status.message, "missing kube-api-endpoint relation")
+        self.assertEqual(
+            self.harness.charm.unit.status.message, "missing kube-api-endpoint relation"
+        )
 
     def test_check_charm_status_kube_control_relation_missing(self):
         """Check that the charm blocks without kube-control relation."""
         self.harness.begin()
-        self.harness.charm.state.kube_api_endpoint.update(TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+        self.harness.charm.state.kube_api_endpoint.update(
+            TEST_KUBE_API_ENDPOINT_RELATION_DATA
+        )
         self.harness.charm.state.nrpe_configured = True
         self.harness.charm.check_charm_status()
 
         self.assertFalse(self.harness.charm.state.configured)
         self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-        self.assertEqual(self.harness.charm.unit.status.message, "missing kube-control relation")
+        self.assertEqual(
+            self.harness.charm.unit.status.message, "missing kube-control relation"
+        )
 
     def test_check_charm_status_nrpe_relation_missing(self):
         """Check that the charm bloack without nrpe relation."""
         self.harness.begin()
         self.harness.charm.state.kube_control.update(TEST_KUBE_CONTOL_RELATION_DATA)
-        self.harness.charm.state.kube_api_endpoint.update(TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+        self.harness.charm.state.kube_api_endpoint.update(
+            TEST_KUBE_API_ENDPOINT_RELATION_DATA
+        )
         self.harness.charm.check_charm_status()
 
         self.assertFalse(self.harness.charm.state.configured)
         self.assertEqual(self.harness.charm.unit.status.name, "blocked")
-        self.assertEqual(self.harness.charm.unit.status.message, "missing nrpe-external-master relation")
+        self.assertEqual(
+            self.harness.charm.unit.status.message,
+            "missing nrpe-external-master relation",
+        )
 
     def test_check_charm_status_configured(self):
         """Check the charm becomes configured."""
         self.harness.begin()
         self.harness.charm.helper.configure = mock.MagicMock()
         self.harness.charm.state.kube_control.update(TEST_KUBE_CONTOL_RELATION_DATA)
-        self.harness.charm.state.kube_api_endpoint.update(TEST_KUBE_API_ENDPOINT_RELATION_DATA)
+        self.harness.charm.state.kube_api_endpoint.update(
+            TEST_KUBE_API_ENDPOINT_RELATION_DATA
+        )
         self.harness.charm.state.nrpe_configured = True
         self.harness.charm.check_charm_status()
 

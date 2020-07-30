@@ -48,30 +48,54 @@ def check_kubernetes_health(k8s_address, client_token, disable_ssl):
         http = urllib3.PoolManager()
 
     try:
-        resp = http.request("GET", url, headers={"Authorization": "Bearer {}".format(client_token)})
+        resp = http.request(
+            "GET", url, headers={"Authorization": "Bearer {}".format(client_token)}
+        )
     except urllib3.exceptions.MaxRetryError as e:
         return NAGIOS_STATUS_CRITICAL, e
 
     if resp.status != 200:
-        return NAGIOS_STATUS_CRITICAL, "Unexpected HTTP Response code ({})".format(resp.status)
+        return (
+            NAGIOS_STATUS_CRITICAL,
+            "Unexpected HTTP Response code ({})".format(resp.status),
+        )
     elif resp.data != b"ok":
-        return NAGIOS_STATUS_WARNING, "Unexpected Kubernetes healthz status '{}'".format(resp.data)
+        return (
+            NAGIOS_STATUS_WARNING,
+            "Unexpected Kubernetes healthz status '{}'".format(resp.data),
+        )
     return NAGIOS_STATUS_OK, "Kubernetes health 'ok'"
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Check Kubernetes API status", formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-
-    parser.add_argument("-H", "--host", dest="host", help="Hostname or IP of the kube-api-server", required=True)
-
-    parser.add_argument(
-        "-P", "--port", dest="port", type=int, default=6443, help="Port of the kube-api-server", required=True
+        description="Check Kubernetes API status",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     parser.add_argument(
-        "-T", "--token", dest="client_token", help="Client access token for authenticate with the Kubernetes API"
+        "-H",
+        "--host",
+        dest="host",
+        help="Hostname or IP of the kube-api-server",
+        required=True,
+    )
+
+    parser.add_argument(
+        "-P",
+        "--port",
+        dest="port",
+        type=int,
+        default=6443,
+        help="Port of the kube-api-server",
+        required=True,
+    )
+
+    parser.add_argument(
+        "-T",
+        "--token",
+        dest="client_token",
+        help="Client access token for authenticate with the Kubernetes API",
     )
 
     check_choices = ["health"]
@@ -95,12 +119,12 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    checks = {
-        "health": check_kubernetes_health,
-    }
+    checks = {"health": check_kubernetes_health}
 
     k8s_url = "https://{}:{}".format(args.host, args.port)
-    nagios_exit(*checks[args.check](k8s_url, args.client_token, args.disable_host_key_check))
+    nagios_exit(
+        *checks[args.check](k8s_url, args.client_token, args.disable_host_key_check)
+    )
 
 """
 TODO: Future Checks

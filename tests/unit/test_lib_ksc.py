@@ -51,7 +51,9 @@ class TestLibKSCHelper(unittest.TestCase):
         # Create test state object
         class FakeStateObject(object):
             kube_api_endpoint = {"hostname": "1.1.1.1", "port": "1111"}
-            kube_control = {"creds": """{"kube-client": {"client_token": "abcdef0123456789"}}"""}
+            kube_control = {
+                "creds": """{"kube-client": {"client_token": "abcdef0123456789"}}"""
+            }
             installed = False
             configured = False
             started = False
@@ -125,7 +127,9 @@ class TestLibKSCHelper(unittest.TestCase):
         self.assertFalse(self.helper.update_tls_certificates())
 
         # returns True when subprocess successful
-        self.helper.config["trusted_ssl_ca"] = base64.b64encode(str.encode(TEST_CERTIFICATE))
+        self.helper.config["trusted_ssl_ca"] = base64.b64encode(
+            str.encode(TEST_CERTIFICATE)
+        )
         self.assertTrue(self.helper.update_tls_certificates())
         with open(self.cert_path, "r") as f:
             self.assertEqual(f.read(), TEST_CERTIFICATE)
@@ -133,7 +137,9 @@ class TestLibKSCHelper(unittest.TestCase):
         mock_subprocess.reset_mock()
 
         # returns false when subprocess hits an exception
-        mock_subprocess.side_effect = CalledProcessError("Command", "Mock Subprocess Call Error")
+        mock_subprocess.side_effect = CalledProcessError(
+            "Command", "Mock Subprocess Call Error"
+        )
         self.assertFalse(self.helper.update_tls_certificates())
 
     def test_render_checks(self):
@@ -147,7 +153,8 @@ class TestLibKSCHelper(unittest.TestCase):
         self.assertTrue(self.helper.install_kubectl())
         channel = self.config.get("channel")
         mock_snap_subprocess.assert_called_with(
-            ["snap", "install", "--classic", "--channel={}".format(channel), "kubectl"], env=os.environ
+            ["snap", "install", "--classic", "--channel={}".format(channel), "kubectl"],
+            env=os.environ,
         )
 
     @mock.patch("charmhelpers.fetch.snap.subprocess.check_call")

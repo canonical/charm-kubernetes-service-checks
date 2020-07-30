@@ -29,18 +29,27 @@ class KubernetesServiceChecksCharm(CharmBase):
         self.framework.observe(self.on.start, self.on_start)
         self.framework.observe(self.on.config_changed, self.on_config_changed)
         self.framework.observe(
-            self.on.kube_api_endpoint_relation_changed, self.on_kube_api_endpoint_relation_changed,
-        )
-        self.framework.observe(self.on.kube_api_endpoint_relation_departed, self.on_kube_api_endpoint_relation_departed)
-        self.framework.observe(
-            self.on.kube_control_relation_changed, self.on_kube_control_relation_changed,
-        )
-        self.framework.observe(self.on.kube_control_relation_departed, self.on_kube_control_relation_departed)
-        self.framework.observe(
-            self.on.nrpe_external_master_relation_joined, self.on_nrpe_external_master_relation_joined
+            self.on.kube_api_endpoint_relation_changed,
+            self.on_kube_api_endpoint_relation_changed,
         )
         self.framework.observe(
-            self.on.nrpe_external_master_relation_departed, self.on_nrpe_external_master_relation_departed
+            self.on.kube_api_endpoint_relation_departed,
+            self.on_kube_api_endpoint_relation_departed,
+        )
+        self.framework.observe(
+            self.on.kube_control_relation_changed, self.on_kube_control_relation_changed
+        )
+        self.framework.observe(
+            self.on.kube_control_relation_departed,
+            self.on_kube_control_relation_departed,
+        )
+        self.framework.observe(
+            self.on.nrpe_external_master_relation_joined,
+            self.on_nrpe_external_master_relation_joined,
+        )
+        self.framework.observe(
+            self.on.nrpe_external_master_relation_departed,
+            self.on_nrpe_external_master_relation_departed,
         )
         # -- initialize states --
         self.state.set_default(
@@ -76,7 +85,10 @@ class KubernetesServiceChecksCharm(CharmBase):
         - Check any required config options
         - Finally, configure the charms checks and set flags
         """
-        if not self.helper.kubernetes_api_address or not self.helper.kubernetes_api_port:
+        if (
+            not self.helper.kubernetes_api_address
+            or not self.helper.kubernetes_api_port
+        ):
             logging.warning("kube-api-endpoint relation missing or misconfigured")
             self.unit.status = BlockedStatus("missing kube-api-endpoint relation")
             return
@@ -98,10 +110,14 @@ class KubernetesServiceChecksCharm(CharmBase):
                     logging.info("TLS Certificates updated successfully")
                 else:
                     logging.error("Failed to update TLS Certificates")
-                    self.unit.status = BlockedStatus("update-ca-certificates error. check logs")
+                    self.unit.status = BlockedStatus(
+                        "update-ca-certificates error. check logs"
+                    )
                     return
             else:
-                logging.warning("No trusted_ssl_ca provided, SSL Host Authentication disabled")
+                logging.warning(
+                    "No trusted_ssl_ca provided, SSL Host Authentication disabled"
+                )
 
             logging.info("Configuring Kubernetes Service Checks")
             self.helper.configure()
@@ -115,7 +131,10 @@ class KubernetesServiceChecksCharm(CharmBase):
         """Handle config changed."""
         self.state.configured = False
         if not self.state.installed:
-            logging.warning("Config changed called before install complete, deferring event: {}.".format(event.handle))
+            logging.warning(
+                "Config changed called before install complete, "
+                "deferring event: {}.".format(event.handle)
+            )
             self._defer_once(event)
             return
         self.check_charm_status()
@@ -123,7 +142,10 @@ class KubernetesServiceChecksCharm(CharmBase):
     def on_start(self, event):
         """Handle start state."""
         if not self.state.configured:
-            logging.warning("Start called before configuration complete, deferring event: {}".format(event.handle))
+            logging.warning(
+                "Start called before configuration complete, "
+                "deferring event: {}".format(event.handle)
+            )
             event.defer()
             return
         self.unit.status = ActiveStatus("Unit is ready")
@@ -141,9 +163,13 @@ class KubernetesServiceChecksCharm(CharmBase):
                 logging.debug("Found event: {} x {}".format(event_path, notice_count))
 
         if notice_count > 1:
-            logging.debug("Not deferring {} notice count of {}".format(handle, notice_count))
+            logging.debug(
+                "Not deferring {} notice count of {}".format(handle, notice_count)
+            )
         else:
-            logging.debug("Deferring {} notice count of {}".format(handle, notice_count))
+            logging.debug(
+                "Deferring {} notice count of {}".format(handle, notice_count)
+            )
             event.defer()
 
     def on_kube_api_endpoint_relation_changed(self, event):
