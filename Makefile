@@ -1,10 +1,9 @@
 PYTHON := /usr/bin/python3
 
-ifndef CHARM_BUILD_DIR
-	CHARM_BUILD_DIR=/tmp/charm-builds
-endif
-
 PROJECTPATH=$(dir $(realpath $(MAKEFILE_LIST)))
+ifndef CHARM_BUILD_DIR
+	CHARM_BUILD_DIR=${PROJECTPATH}.build
+endif
 METADATA_FILE="metadata.yaml"
 CHARM_NAME=$(shell cat ${PROJECTPATH}/${METADATA_FILE} | grep -E '^name:' | awk '{print $$2}')
 
@@ -14,9 +13,11 @@ help:
 	@echo " make help - show this text"
 	@echo " make clean - remove unneeded files"
 	@echo " make submodules - make sure that the submodules are up-to-date"
+	@echo " make submodules-update - update submodules to latest changes on remote branch"
 	@echo " make build - build the charm"
 	@echo " make release - run clean, submodules and build targets"
-	@echo " make lint - run flake8 and black"
+	@echo " make lint - run flake8 and black --check"
+	@echo " make black - run black and reformat files"
 	@echo " make proof - run charm proof"
 	@echo " make unittests - run the tests defined in the unittest subdirectory"
 	@echo " make functional - run the tests defined in the functional subdirectory"
@@ -25,17 +26,7 @@ help:
 
 clean:
 	@echo "Cleaning files"
-	@if [ -d .tox ] ; then rm -r .tox ; fi
-	@if [ -d .pytest_cache ] ; then rm -r .pytest_cache ; fi
-	@if [ -d .idea ] ; then rm -r .idea ; fi
-	@if [ -d .coverage ] ; then rm -r .coverage ; fi
-	@if [ -d report ] ; then rm -r report ; fi
-	@find . -iname __pycache__ -exec rm -r {} +
-	@find . -type f -name "*.py[cod]" -delete
-	@find . -type f -name "*$py.class" -delete
-	@find . -type f -name "*.log" -delete
-	@find . -type f -name "*.swp" -delete
-	@find . -type f -name ".unit-state.db" -delete
+	@git clean -ffXd -e '!.idea'
 	@echo "Cleaning existing build"
 	@rm -rf ${CHARM_BUILD_DIR}/${CHARM_NAME}
 
@@ -43,21 +34,30 @@ submodules:
 	@echo "Cloning submodules"
 	@git submodule update --init --recursive
 
+submodules-update:
+	@echo "Pulling latest updates for submodules"
+	@git submodule update --init --recursive --remote --merge
+
 build:
 	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
-	@-git describe --tags > ./repo-info
+	@-git rev-parse --abbrev-ref HEAD > ./repo-info
+	@-git describe --always > ./version
 	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
-	@cp -r ./* ${CHARM_BUILD_DIR}/${CHARM_NAME}
-	@echo "Installing/updating env from requirements.txt"
+	@cp -a ./* ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@echo "Installing/updating env if requirements.txt exists"
 	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}/env/
-	@if [ -f requirements.txt ] ; then @pip3 install --target=${CHARM_BUILD_DIR}/${CHARM_NAME}/env -r requirements.txt --upgrade ; fi
+	@if [ -f requirements.txt ] ; then pip3 install --target=${CHARM_BUILD_DIR}/${CHARM_NAME}/env -r requirements.txt --upgrade ; fi
 
-release: clean submodules build
+release: clean build
 	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"
 
 lint:
 	@echo "Running lint checks"
 	@tox -e lint
+
+black:
+	@echo "Reformat files with black"
+	@tox -e black
 
 proof:
 	@echo "Running charm proof"
@@ -75,4 +75,4 @@ test: lint proof unittests functional
 	@echo "Tests completed for charm ${CHARM_NAME}."
 
 # The targets below don't depend on a file
-.PHONY: help submodules clean build release lint proof unittests functional test
+.PHONY: help submodules submodules-update clean build release lint black proof unittests functional test
