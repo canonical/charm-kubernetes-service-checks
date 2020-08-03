@@ -1,16 +1,17 @@
 """Charm unit tests."""
 import os
-from pathlib import Path
 import unittest
-
+from pathlib import Path
 
 import mock
+
 import yaml
 
 # include ./lib in the charm's PATH
 import setuppath  # noqa:F401
 
 from charm import KubernetesServiceChecksCharm  # noqa:I100
+
 import ops.main
 from ops.testing import Harness
 

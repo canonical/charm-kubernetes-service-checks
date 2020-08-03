@@ -10,6 +10,7 @@ import logging
 import setuppath  # noqa:F401
 
 from lib_kubernetes_service_checks import KSCHelper  # noqa:I100
+
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main

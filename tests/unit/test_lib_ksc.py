@@ -2,12 +2,14 @@
 import base64
 import os
 import subprocess
-from subprocess import CalledProcessError
 import tempfile
 import unittest
+from subprocess import CalledProcessError
 
 from lib import lib_kubernetes_service_checks
+
 import mock
+
 import yaml
 
 
