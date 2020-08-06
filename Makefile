@@ -59,9 +59,9 @@ black:
 	@echo "Reformat files with black"
 	@tox -e black
 
-proof:
+proof: build
 	@echo "Running charm proof"
-	@-charm proof
+	@-charm proof ${CHARM_BUILD_DIR}/${CHARM_NAME}
 
 unittests:
 	@echo "Running unit tests"
