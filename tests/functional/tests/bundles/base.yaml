@@ -47,6 +47,7 @@ applications:
         constraints: cores=4 mem=4G root-disk=16G
         options:
             channel: 1.18/stable
+            kubelet-extra-config: '{protectKernelDefaults: false}'
         resources:
           cni-amd64: 645
           cni-arm64: 636
