@@ -1,7 +1,5 @@
-series: xenial
 applications:
     kubernetes-service-checks:
-        charm: ../../../../
         num_units: 1
     containerd:
         charm: cs:~containers/containerd

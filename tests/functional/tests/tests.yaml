@@ -1,3 +1,4 @@
+charm_name: kubernetes-service-checks
 tests:
     - tests.kubernetes_service_checks.TestChecks
     - tests.kubernetes_service_checks.TestRelations
