@@ -42,14 +42,24 @@ build:
 	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
 	@-git rev-parse --abbrev-ref HEAD > ./repo-info
 	@-git describe --always > ./version
-	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
-	@cp -a ./* ${CHARM_BUILD_DIR}/${CHARM_NAME}
-	@echo "Installing/updating env if requirements.txt exists"
-	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}/env/
-	@if [ -f requirements.txt ] ; then pip3 install --target=${CHARM_BUILD_DIR}/${CHARM_NAME}/env -r requirements.txt --upgrade ; fi
+	@mkdir -p ${CHARM_BUILD_DIR}
+	@tox -e build
+	@mv ${CHARM_NAME}.charm ${CHARM_BUILD_DIR}
 
-release: clean build
+
+release: clean build unpack
 	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"
+
+unpack: build
+	@-rm -rf ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@echo "Unpacking built .charm into ${CHARM_BUILD_DIR}/${CHARM_NAME}"
+	@cd ${CHARM_BUILD_DIR}/${CHARM_NAME} && unzip -q ${CHARM_BUILD_DIR}/${CHARM_NAME}.charm
+	# until charmcraft copies READMEs in, we need to publish charms with readmes in them.
+	@cp ${PROJECTPATH}/README.md ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@cp ${PROJECTPATH}/copyright ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@cp ${PROJECTPATH}/repo-info ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@cp ${PROJECTPATH}/version ${CHARM_BUILD_DIR}/${CHARM_NAME}
 
 lint:
 	@echo "Running lint checks"
@@ -59,9 +69,9 @@ black:
 	@echo "Reformat files with black"
 	@tox -e black
 
-proof: build
+proof: unpack
 	@echo "Running charm proof"
-	@-charm proof ${CHARM_BUILD_DIR}/${CHARM_NAME}
+	@charm proof ${CHARM_BUILD_DIR}/${CHARM_NAME}
 
 unittests:
 	@echo "Running unit tests"
@@ -75,4 +85,4 @@ test: lint proof unittests functional
 	@echo "Tests completed for charm ${CHARM_NAME}."
 
 # The targets below don't depend on a file
-.PHONY: help submodules submodules-update clean build release lint black proof unittests functional test
+.PHONY: help submodules submodules-update clean build release lint black proof unittests functional test unpack
