@@ -83,7 +83,9 @@ NOTE: If you are behind a proxy, be sure to export a MODEL_SETTINGS variable as
 described above. Note that you will need to use the juju-http-proxy, juju-https-proxy, juju-no-proxy
 and similar settings.
 
-## Contact
+## Contact information
 
-- Author: **Bootstack Charmers** *<bootstack-charmers@lists.canonical.com>*
-- Bug Tracker: [lp:charm-kubernetes-service-checks](https://launchpad.net/charm-kubernetes-service-checks)
+Please contact Canonical's BootStack team via the "Submit a bug" link.
+
+- Website: [lp:charm-kubernetes-service-checks](https://launchpad.net/charm-kubernetes-service-checks)
+- Bug Tracker: [lp:charm-kubernetes-service-checks](https://bugs.launchpad.net/charm-kubernetes-service-checks)
