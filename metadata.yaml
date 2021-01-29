@@ -1,7 +1,7 @@
 name: kubernetes-service-checks
 summary: Kubernetes Services NRPE Checks
 maintainers:
-    - Llama (LMA) Charmers <llama-charmers@lists.ubuntu.com>
+    - Bootstack Charmers <bootstack-charmers@lists.ubuntu.com>
 description: |
     This charm provides NRPE Checks verifying Kubernetes API accessibility
     and integrates with Nagios for timely alerting.
