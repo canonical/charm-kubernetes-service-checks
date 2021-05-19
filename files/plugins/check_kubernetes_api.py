@@ -2,6 +2,7 @@
 """NRPE Plugin for checking Kubernetes API."""
 
 import argparse
+import json
 import sys
 
 import urllib3
@@ -67,6 +68,52 @@ def check_kubernetes_health(k8s_address, client_token, disable_ssl):
     return NAGIOS_STATUS_OK, "Kubernetes health 'ok'"
 
 
+def check_kubernetes_nodes(k8s_address, client_token, disable_ssl):
+    """Call <kubernetes-api>/api/v1/nodes endpoint and check each node status.
+
+    :param k8s_address: Address to kube-api-server formatted 'https://<IP>:<PORT>'
+    :param client_token: Token for authenticating with the kube-api
+    :param disable_ssl: Disables SSL Host Key verification
+    """
+    url = k8s_address + "/api/v1/nodes"
+    if disable_ssl:
+        # perform check without SSL verification
+        http = urllib3.PoolManager(cert_reqs="CERT_NONE", assert_hostname=False)
+    else:
+        http = urllib3.PoolManager()
+
+    try:
+        resp = http.request(
+            "GET", url, headers={"Authorization": "Bearer {}".format(client_token)}
+        )
+    except urllib3.exceptions.MaxRetryError as e:
+        return NAGIOS_STATUS_CRITICAL, e
+
+    if resp.status != 200:
+        return (
+            NAGIOS_STATUS_CRITICAL,
+            "Unexpected HTTP Response code ({})".format(resp.status),
+        )
+
+    response_body = json.loads(resp.data)
+    nodes_not_ready = []
+    for item in response_body["items"]:
+        for condition in item["status"]["conditions"]:
+            if condition["type"] == "Ready":
+                node_name = item["metadata"]["name"]
+                if condition["status"] != "True":
+                    nodes_not_ready.append(node_name)
+
+    if nodes_not_ready:
+        nodes = ", ".join(nodes_not_ready)
+        return (
+            NAGIOS_STATUS_CRITICAL,
+            f'Nodes NotReady: {nodes}',
+        )
+
+    return NAGIOS_STATUS_OK, "All Nodes Ready"
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Check Kubernetes API status",
@@ -98,7 +145,7 @@ if __name__ == "__main__":
         help="Client access token for authenticate with the Kubernetes API",
     )
 
-    check_choices = ["health"]
+    check_choices = ["health", "nodes"]
     parser.add_argument(
         "--check",
         dest="check",
@@ -119,7 +166,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    checks = {"health": check_kubernetes_health}
+    checks = {
+            "health": check_kubernetes_health,
+            "nodes": check_kubernetes_nodes,
+            }
 
     k8s_url = "https://{}:{}".format(args.host, args.port)
     nagios_exit(
@@ -130,11 +180,6 @@ if __name__ == "__main__":
 TODO: Future Checks
 
 GET /api/v1/componentstatuses HTTP/1.1
-Authorization: Bearer $TOKEN
-Accept: application/json
-Connection: close
-
-GET /api/va/nodes HTTP/1.1
 Authorization: Bearer $TOKEN
 Accept: application/json
 Connection: close

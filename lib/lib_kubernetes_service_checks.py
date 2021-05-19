@@ -108,9 +108,9 @@ class KSCHelper:
         if not os.path.exists(self.plugins_dir):
             os.makedirs(self.plugins_dir)
 
-        # register basic api health check
+        # register basic api health check and nodes readiness status
         check_k8s_plugin = os.path.join(self.plugins_dir, "check_kubernetes_api.py")
-        for check in ["health"]:
+        for check in ["health", "nodes"]:
             check_command = "{} -H {} -P {} -T {} --check {}".format(
                 check_k8s_plugin,
                 self.kubernetes_api_address,
