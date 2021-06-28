@@ -108,7 +108,7 @@ def check_kubernetes_nodes(k8s_address, client_token, disable_ssl):
         nodes = ", ".join(nodes_not_ready)
         return (
             NAGIOS_STATUS_CRITICAL,
-            f'Nodes NotReady: {nodes}',
+            f"Nodes NotReady: {nodes}",
         )
 
     return NAGIOS_STATUS_OK, "All Nodes Ready"
@@ -167,9 +167,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     checks = {
-            "health": check_kubernetes_health,
-            "nodes": check_kubernetes_nodes,
-            }
+        "health": check_kubernetes_health,
+        "nodes": check_kubernetes_nodes,
+    }
 
     k8s_url = "https://{}:{}".format(args.host, args.port)
     nagios_exit(
