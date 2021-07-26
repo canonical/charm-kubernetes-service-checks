@@ -43,7 +43,7 @@ applications:
     kubernetes-worker:
         charm: cs:~containers/kubernetes-worker
         expose: true
-        num_units: 1
+        num_units: 3
         constraints: cores=4 mem=4G root-disk=16G
         options:
             channel: 1.18/stable
