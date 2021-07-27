@@ -12,7 +12,6 @@ tags:
 series:
     - focal
     - bionic
-    - xenial
 requires:
     kube-control:
         interface: kube-control
