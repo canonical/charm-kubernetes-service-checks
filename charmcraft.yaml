@@ -2,6 +2,8 @@ type: charm
 parts:
   charm:
     charm-python-packages: [setuptools<58]
+    prime:
+      - files/*
 bases:
     - build-on:
         - name: ubuntu
