@@ -9,10 +9,7 @@ tags:
     - kubernetes
     - ops
     - monitoring
-series:
-    - jammy
-    - focal
-    - bionic
+series: []
 requires:
     kube-control:
         interface: kube-control
