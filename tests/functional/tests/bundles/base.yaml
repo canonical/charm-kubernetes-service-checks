@@ -21,7 +21,9 @@ applications:
     kubernetes-worker:
         charm: ch:kubernetes-worker
         expose: true
-        num_units: 3
+        # Note(sudeephb): Using only one worker instance
+        # to put less stress on test environment
+        num_units: 1
         constraints: cores=4 mem=4G root-disk=16G
         options:
             kubelet-extra-config: '{protectKernelDefaults: false}'
