@@ -5,28 +5,28 @@ tests:
 target_deploy_status:
     kubernetes-service-checks:
         workload-status: blocked
-        workload-status-message: "missing kube-api-endpoint relation"
+        workload-status-message-prefix: "missing kube-api-endpoint relation"
     kubernetes-master:
         workload-status: active
-        workload-status-message: "Kubernetes control-plane running."
+        workload-status-message-prefix: "Kubernetes control-plane running."
     kubernetes-worker:
         workload-status: active
-        workload-status-message: "Kubernetes worker running."
+        workload-status-message-prefix: "Kubernetes worker running."
     flannel:
         workload-status: active
-        workload-status-message: "Flannel subnet"
+        workload-status-message-prefix: "Flannel subnet"
     easyrsa:
         workload-status: active
-        workload-status-message: "Certificate Authority connected."
+        workload-status-message-prefix: "Certificate Authority connected."
     containerd:
         workload-status: active
-        workload-status-message: "Container runtime available"
+        workload-status-message-prefix: "Container runtime available"
     etcd:
         workload-status: active
-        workload-status-message: "Healthy with 1 known peer"
+        workload-status-message-prefix: "Healthy with 1 known peer"
     nrpe:
         workload-status: blocked
-        workload-status-message: Nagios server not configured or related
+        workload-status-message-prefix: Nagios server not configured or related
 gate_bundles:
     - jammy
     - focal
