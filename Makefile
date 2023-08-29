@@ -24,6 +24,7 @@ help:
 	@echo " make proof - run charm proof"
 	@echo " make unittests - run the tests defined in the unittest subdirectory"
 	@echo " make functional - run the tests defined in the functional subdirectory"
+	@echo " make functional31 - run the tests defined in the functional subdirectory with juju 3.1 requirements"
 	@echo " make test - run lint, proof, unittests and functional targets"
 	@echo ""
 
@@ -86,8 +87,12 @@ functional: build
 	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
 	@CHARM_LOCATION=${PROJECTPATH} tox -e func
 
+functional31: build
+	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
+	@CHARM_LOCATION=${PROJECTPATH} tox -e func31
+
 test: lint proof unittests functional
 	@echo "Tests completed for charm ${CHARM_NAME}."
 
 # The targets below don't depend on a file
-.PHONY: help submodules submodules-update clean build release lint black proof unittests functional test unpack
+.PHONY: help submodules submodules-update clean build release lint black proof unittests functional functional31 test unpack
