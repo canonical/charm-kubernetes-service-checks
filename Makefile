@@ -88,7 +88,7 @@ functional: build
 	@CHARM_LOCATION=${PROJECTPATH} tox -e func
 
 functional31: build
-	@echo "Executing functional tests in ${CHARM_BUILD_DIR}"
+	@echo "Executing functional tests in ${CHARM_BUILD_DIR} with juju 3.1 requirements"
 	@CHARM_LOCATION=${PROJECTPATH} tox -e func31
 
 test: lint proof unittests functional
