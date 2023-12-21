@@ -49,8 +49,6 @@ build: clean submodules-update
 	@-git describe --always > ./version
 	@charmcraft -v pack ${BUILD_ARGS}
 	@bash -c ./rename.sh
-	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
-	@unzip ${PROJECTPATH}/${CHARM_NAME}.charm -d ${CHARM_BUILD_DIR}/${CHARM_NAME}
 
 release: clean build unpack
 	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"
