@@ -44,6 +44,7 @@ submodules-update:
 	@git submodule update --init --recursive --remote --merge
 
 build: clean submodules-update
+	sudo apt install -y unzip
 	@echo "Building charm to base directory ${CHARM_BUILD_DIR}/${CHARM_NAME}"
 	@-git rev-parse --abbrev-ref HEAD > ./repo-info
 	@-git describe --always > ./version
@@ -51,6 +52,7 @@ build: clean submodules-update
 	@bash -c ./rename.sh
 	@mkdir -p ${CHARM_BUILD_DIR}/${CHARM_NAME}
 	@unzip ${PROJECTPATH}/${CHARM_NAME}.charm -d ${CHARM_BUILD_DIR}/${CHARM_NAME}
+
 
 release: clean build unpack
 	@echo "Charm is built at ${CHARM_BUILD_DIR}/${CHARM_NAME}"
