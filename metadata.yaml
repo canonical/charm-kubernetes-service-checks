@@ -9,7 +9,6 @@ tags:
     - kubernetes
     - ops
     - monitoring
-series: []
 requires:
     kube-control:
         interface: kube-control
