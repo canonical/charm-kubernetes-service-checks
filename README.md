@@ -1,5 +1,9 @@
 # kubernetes-service-checks Charm
 
+> [!CAUTION]
+
+> This is a deprecated charm that only supports Kubernetes ≤ 1.28 and does not integrate with the Canonical Observability Stack. Please rely on native COS integration offered by the Kubernetes charms for monitoring Kubernetes deployments.
+
 ## Overview
 
 This charm provides Kubernetes Service checks for Nagios
