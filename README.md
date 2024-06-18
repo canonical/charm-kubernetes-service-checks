@@ -1,8 +1,7 @@
 # kubernetes-service-checks Charm
 
 > [!CAUTION]
-
-> This is a deprecated charm that only supports Kubernetes ≤ 1.28 and does not integrate with the Canonical Observability Stack. Please rely on native COS integration offered by the Kubernetes charms for monitoring Kubernetes deployments.
+> This is a deprecated charm that only supports Kubernetes ≤ 1.28 and does not integrate with the [Canonical Observability Stack](https://github.com/canonical/cos-lite-bundle). Please rely on native COS integration offered by the [Kubernetes charms](https://charmhub.io/canonical-kubernetes) for monitoring Kubernetes deployments.
 
 ## Overview
 
