@@ -4,15 +4,15 @@ maintainers:
     - Bootstack Charmers <bootstack-charmers@lists.ubuntu.com>
 description: |
     WARNING: This is a deprecated charm that only supports Kubernetes ≤ 1.28 and does
-    not integrate with the [Canonical Observability
-    Stack](https://github.com/canonical/cos-lite-bundle). Please rely on native COS
-    integration offered by the [Kubernetes
-    charms](https://charmhub.io/canonical-kubernetes) for monitoring Kubernetes
+    not integrate with the Canonical Observability Stack[0]. Please rely on native COS
+    integration offered by the Kubernetes charms[1] for monitoring Kubernetes
     deployments.
 
-    This charm provides NRPE Checks verifying Kubernetes API
-    accessibility
-    and integrates with Nagios for timely alerting.
+    This charm provides NRPE Checks verifying Kubernetes API accessibility and
+    integrates with Nagios for timely alerting.
+
+    [0] https://github.com/canonical/cos-lite-bundle
+    [1] https://charmhub.io/canonical-kubernetes
 tags:
     - kubernetes
     - ops
