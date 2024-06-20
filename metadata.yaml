@@ -3,7 +3,15 @@ summary: Kubernetes Services NRPE Checks
 maintainers:
     - Bootstack Charmers <bootstack-charmers@lists.ubuntu.com>
 description: |
-    This charm provides NRPE Checks verifying Kubernetes API accessibility
+    WARNING: This is a deprecated charm that only supports Kubernetes ≤ 1.28 and does
+    not integrate with the [Canonical Observability
+    Stack](https://github.com/canonical/cos-lite-bundle). Please rely on native COS
+    integration offered by the [Kubernetes
+    charms](https://charmhub.io/canonical-kubernetes) for monitoring Kubernetes
+    deployments.
+
+    This charm provides NRPE Checks verifying Kubernetes API
+    accessibility
     and integrates with Nagios for timely alerting.
 tags:
     - kubernetes
