@@ -1,3 +1,8 @@
+# This file is centrally managed as a template file in https://github.com/canonical/solutions-engineering-automation
+# To update the file:
+# - Edit it in the canonical/solutions-engineering-automation repository.
+# - Open a PR with the changes.
+# - When the PR merges, the soleng-terraform bot will open a PR to the target repositories with the changes.
 name: Tests
 
 on:
@@ -34,11 +39,18 @@ jobs:
       matrix:
         runs-on: [[self-hosted, linux, x64, large, jammy]]
         test-command: ['make functional']
+        juju-channel: ["3.4/stable"]
     steps:
 
       - uses: actions/checkout@v4
         with:
           submodules: true
+
+        # arm64 runners don't have make or gcc installed by default
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y make gcc
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -49,7 +61,7 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: "lxd"
-          juju-channel: "3.4/stable"
+          juju-channel: ${{ matrix.juju-channel }}
           charmcraft-channel: "2.x/stable"
 
         # This is used by zaza in the functional tests for non-amd64 architectures (if applicable)
