@@ -1,7 +1,6 @@
 """Charm unit tests."""
 import os
 import unittest
-from pathlib import Path
 
 import mock
 
@@ -12,7 +11,6 @@ import setuppath  # noqa:F401
 
 from charm import KubernetesServiceChecksCharm  # noqa:I100
 
-import ops.main
 from ops.testing import Harness
 
 TEST_KUBE_CONTOL_RELATION_DATA = {
@@ -68,7 +66,7 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
         """Prepare tests."""
         self.harness = Harness(KubernetesServiceChecksCharm)
         # Mock config_get to return default config
-        with open(ops.main._get_charm_dir() / Path("config.yaml"), "r") as config_file:
+        with open("config.yaml", "r") as config_file:
             config = yaml.safe_load(config_file)
         charm_config = {}
 
@@ -176,7 +174,8 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
         mock_relation_data.return_value.__getitem__.return_value = {}
         self.harness.begin()
         self.harness.charm.check_charm_status = mock.MagicMock()
-        self.emit("nrpe_external_master_relation_departed")
+        relation = self.harness.model.get_relation("nrpe-external-master", 1)
+        self.harness.charm.on["nrpe-external-master"].relation_departed.emit(relation)
         self.harness.charm.check_charm_status.assert_called_once()
 
         self.assertFalse(self.harness.charm.state.nrpe_configured)
@@ -238,25 +237,6 @@ class TestKubernetesServiceChecksCharm(unittest.TestCase):
 
         self.harness.charm.helper.configure.assert_called_once()
         self.assertTrue(self.harness.charm.state.configured)
-
-    def emit(self, event):
-        """Emit the named hook on the charm."""
-        self.harness.charm.framework.reemit()
-
-        if "_relation_" in event:
-            relation_name = event.split("_relation")[0].replace("_", "-")
-            with mock.patch.dict(
-                "os.environ",
-                {
-                    "JUJU_RELATION": relation_name,
-                    "JUJU_RELATION_ID": "1",
-                    "JUJU_REMOTE_APP": "mock",
-                    "JUJU_REMOTE_UNIT": "mock/0",
-                },
-            ):
-                ops.main._emit_charm_event(self.harness.charm, event)
-        else:
-            ops.main._emit_charm_event(self.harness.charm, event)
 
 
 if __name__ == "__main__":
